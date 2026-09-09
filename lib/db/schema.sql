@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS worksheet_word (
   word_id      INTEGER NOT NULL REFERENCES word(id),
   bucket       TEXT NOT NULL,         -- 'required' | 'optional'
   row_char     TEXT,                  -- 所属生字，required 的为 NULL
+  row_pinyin   TEXT,                  -- 该生字的拼音（生字本身可能是多音字，必须持久化，不要现算）
   row_index    INTEGER,               -- 生字行序号，从 0 开始；required 的为 NULL
   ord          INTEGER NOT NULL,      -- 行内原始顺序 / required 内原始顺序
   PRIMARY KEY (worksheet_id, word_id)

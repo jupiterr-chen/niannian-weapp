@@ -387,4 +387,6 @@ TTS_SPEED=1.0
 | D-4 | `finishSession` 的 `hintCount` 含义 | 定义为**用过提示的词数**（`hint_level > 0` 的 attempt 条数），不是 hint_level 总和。前端文案相应写作「有 K 个词用过提示」。 |
 | D-5 | `weight()` 以 wordId 为键 | 保持。`pickOptional` 只在词落库之后调用，id 必然存在；无 id 时退化为权重 1 是可接受的降级。 |
 | D-6 | `.gitignore` 的 `.env*` 会忽略 `.env.example` | 已加 `!.env.example` 例外。 |
+| D-8 | TTS 返回类型 | 改为 `Promise<{ audio: Buffer; mime: string }>`，覆盖 §5.2 的 `Promise<Buffer>`。原因：mock provider 生成 WAV 比伪造合法 MP3 可靠得多，API 路由据 `mime` 设置 Content-Type。 |
+| D-9 | mock TTS 的音频内容 | 不要静音。按 `repeat` 和 `gapMs` 生成 N 声短提示音（正弦波），使「三遍 + 1.5 秒间隔」的节奏在**没有任何云端密钥**的情况下就能真实听到并验证。 |
 | D-7 | 「结果」的读音 | fixture 取通用读音 `jié guǒ`。本课语境下植物「结果」应为 `jiē guǒ`，但两种读音写出来是同样的字，不影响听写；真要改由家长在选词页用「读音不对」修正（§5.3 第 3 条）。 |

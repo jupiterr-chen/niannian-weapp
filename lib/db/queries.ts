@@ -1,5 +1,4 @@
 import { db } from "./index";
-import { toPinyin } from "../pinyin";
 
 export type Bucket = "required" | "optional";
 export type AttemptStatus = "pending" | "written" | "skipped";
@@ -27,6 +26,7 @@ export interface WordInput {
 
 export interface RowInput {
   char: string;
+  pinyin: string; // VLM-determined reading for this 生字; persisted, never re-derived (PROJECT.md §11 D-2)
   rowIndex: number;
   wordIds: number[]; // original in-row order
 }
@@ -108,6 +108,7 @@ interface WorksheetWordDbRow {
   word_id: number;
   bucket: Bucket;
   row_char: string | null;
+  row_pinyin: string | null;
   row_index: number | null;
   ord: number;
 }
@@ -224,17 +225,17 @@ export const saveWorksheetWords = db.transaction(
     );
 
     const insert = db.prepare(
-      `INSERT INTO worksheet_word (worksheet_id, word_id, bucket, row_char, row_index, ord)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO worksheet_word (worksheet_id, word_id, bucket, row_char, row_pinyin, row_index, ord)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     );
 
     required.forEach((w, i) => {
-      insert.run(worksheetId, w.wordId, "required", null, null, i);
+      insert.run(worksheetId, w.wordId, "required", null, null, null, i);
     });
 
     for (const row of rows) {
       row.wordIds.forEach((wordId, j) => {
-        insert.run(worksheetId, wordId, "optional", row.char, row.rowIndex, j);
+        insert.run(worksheetId, wordId, "optional", row.char, row.pinyin, row.rowIndex, j);
       });
     }
   }
@@ -262,14 +263,21 @@ export function getWorksheetWords(worksheetId: number): {
     .map((l) => wordMap.get(l.word_id))
     .filter((w): w is WordRow => w !== undefined);
 
-  const rowGroups = new Map<number, { char: string; entries: WorksheetWordDbRow[] }>();
+  const rowGroups = new Map<
+    number,
+    { char: string; pinyin: string; entries: WorksheetWordDbRow[] }
+  >();
   for (const l of links) {
     if (l.bucket !== "optional" || l.row_index === null || l.row_char === null) continue;
     const group = rowGroups.get(l.row_index);
     if (group) {
       group.entries.push(l);
     } else {
-      rowGroups.set(l.row_index, { char: l.row_char, entries: [l] });
+      rowGroups.set(l.row_index, {
+        char: l.row_char,
+        pinyin: l.row_pinyin ?? "",
+        entries: [l],
+      });
     }
   }
 
@@ -277,11 +285,9 @@ export function getWorksheetWords(worksheetId: number): {
     .sort(([a], [b]) => a - b)
     .map(([rowIndex, group]) => ({
       char: group.char,
-      // NOTE: schema (§3) has no column persisting the VLM's row-header
-      // pinyin, so it is re-derived from the character here. This is a
-      // best-effort fallback and does not account for context-specific
-      // duoyinzi readings the VLM may have chosen — see final report.
-      pinyin: toPinyin(group.char),
+      // Persisted verbatim from the VLM's per-row reading (PROJECT.md §11
+      // D-2) — never re-derived, since the row char can be a duoyinzi.
+      pinyin: group.pinyin,
       rowIndex,
       words: group.entries
         .sort((a, b) => a.ord - b.ord)
@@ -495,6 +501,9 @@ export const applyAttemptToMistakes = db.transaction((sessionId: number): void =
         hint_sum: current.hint_sum + a.hint_level,
         streak_ok: 0,
         last_bad: nowIso(),
+        // PROJECT.md §11 D-3: a bad attempt un-graduates the word, otherwise
+        // a once-graduated word's -3 weight would permanently exile it.
+        graduated: 0,
       };
     } else {
       const streakOk = current.streak_ok + 1;
