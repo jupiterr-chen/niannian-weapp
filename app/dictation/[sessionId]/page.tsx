@@ -333,7 +333,7 @@ export default function DictationPage({
   if (loadError) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-[20px]">{loadError}</p>
+        <p className="text-body-fluid">{loadError}</p>
         <BigButton onClick={() => router.push("/")}>回到首页</BigButton>
       </main>
     );
@@ -341,7 +341,7 @@ export default function DictationPage({
 
   if (full === undefined || attempts.length === 0) {
     return (
-      <main className="flex flex-1 items-center justify-center p-6 text-[20px] text-[var(--color-fg-muted)]">
+      <main className="flex flex-1 items-center justify-center p-6 text-body-fluid text-[var(--color-fg-muted)]">
         正在加载听写会话…
       </main>
     );

@@ -125,69 +125,71 @@ export default function UploadPage() {
   }, [images, submitting, router]);
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-5 py-8">
-      <h1 className="text-[24px] font-bold">上传今天的作业</h1>
+    <main className="upload-shell mx-auto flex w-full max-w-md flex-col px-5 py-8">
+      <h1 className="flex-none text-page-title font-bold">上传今天的作业</h1>
 
       {error && (
-        <div className="rounded-xl border-2 border-[var(--color-danger)] bg-[var(--color-danger-bg)] p-4 text-[17px] text-[var(--color-danger)]">
+        <div className="mt-5 flex-none rounded-xl border-2 border-[var(--color-danger)] bg-[var(--color-danger-bg)] p-4 text-body-fluid text-[var(--color-danger)]">
           <p>{error}</p>
           <button
             type="button"
             onClick={resetAll}
-            className="focus-ring tap-target mt-3 w-full rounded-xl border-2 border-[var(--color-danger)] text-[18px] font-semibold"
+            className="focus-ring tap-target mt-3 w-full rounded-xl border-2 border-[var(--color-danger)] font-semibold"
           >
             重新选图
           </button>
         </div>
       )}
 
-      {!submitting && (
-        <>
-          <label className="tap-target focus-ring flex cursor-pointer items-center justify-center rounded-2xl border-4 border-dashed border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[20px] font-medium text-[var(--color-fg-muted)]">
-            {images.length === 0 ? "点这里选照片（可多选）" : "继续添加照片"}
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => addFiles(e.target.files)}
+      <div className="upload-block">
+        {!submitting && (
+          <>
+            <label className="tap-target focus-ring flex w-full cursor-pointer items-center justify-center rounded-2xl border-4 border-dashed border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-body-fluid font-medium text-[var(--color-fg-muted)]">
+              {images.length === 0 ? "点这里选照片（可多选）" : "继续添加照片"}
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => addFiles(e.target.files)}
+              />
+            </label>
+
+            {images.length > 0 && (
+              <div className="grid w-full grid-cols-3 gap-3">
+                {images.map((img) => (
+                  <div key={img.id} className="relative aspect-square overflow-hidden rounded-xl border-2 border-[var(--color-border)]">
+                    {/* 纯本地 blob 预览，用原生 img 即可，不需要 next/image 的远程优化 */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.previewUrl} alt="作业照片预览" className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(img.id)}
+                      aria-label="删除这张照片"
+                      className="focus-ring absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-[18px] text-white"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {submitting && (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div
+              className="h-14 w-14 animate-spin rounded-full border-4 border-[var(--color-border)] border-t-[var(--color-primary)]"
+              aria-hidden
             />
-          </label>
+            <p className="text-body-fluid font-medium">正在认字，大约 10 秒…</p>
+          </div>
+        )}
+      </div>
 
-          {images.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              {images.map((img) => (
-                <div key={img.id} className="relative aspect-square overflow-hidden rounded-xl border-2 border-[var(--color-border)]">
-                  {/* 纯本地 blob 预览，用原生 img 即可，不需要 next/image 的远程优化 */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.previewUrl} alt="作业照片预览" className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(img.id)}
-                    aria-label="删除这张照片"
-                    className="focus-ring absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-[18px] text-white"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {submitting && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
-          <div
-            className="h-14 w-14 animate-spin rounded-full border-4 border-[var(--color-border)] border-t-[var(--color-primary)]"
-            aria-hidden
-          />
-          <p className="text-[20px] font-medium">正在认字，大约 10 秒…</p>
-        </div>
-      )}
-
-      <div className="mt-auto pt-4">
+      <div className="flex-none pt-4">
         <BigButton onClick={submit} disabled={images.length === 0 || submitting}>
           {submitting ? "正在识别…" : "开始识别"}
         </BigButton>

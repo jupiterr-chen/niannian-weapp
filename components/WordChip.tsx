@@ -55,51 +55,44 @@ export function WordChip({
         : "bg-[var(--color-chip-bg)] border-[var(--color-border)] text-[var(--color-chip-fg)]";
 
   return (
-    <div className={`flex flex-col gap-1 ${uncertainRing} rounded-2xl`}>
+    <div className={`chip-card ${uncertainRing} rounded-2xl`}>
       <button
         type="button"
         onClick={disabled ? undefined : onSelect}
         disabled={disabled}
         aria-pressed={!disabled && selected}
-        className={`tap-target focus-ring flex min-w-[104px] flex-col items-center justify-center gap-1 rounded-2xl border-2 px-4 py-2 ${bodyClass} ${disabled ? "cursor-default" : "cursor-pointer"}`}
+        className={`chip-hanzi-btn focus-ring border-2 ${bodyClass} ${disabled ? "cursor-default" : "cursor-pointer"}`}
       >
-        {locked && <span aria-hidden className="text-[15px]">🔒 必听</span>}
+        {locked && <span aria-hidden className="text-[length:var(--fs-card-pinyin)]">🔒 必听</span>}
         <PinyinWord text={word.text} pinyin={word.pinyin} size="sm" />
       </button>
 
-      <div className="flex items-center justify-center gap-3 text-[15px]">
+      <div className="chip-actions">
         <button
           type="button"
           onClick={onPreview}
           aria-label={`试听「${word.text}」`}
-          className="focus-ring flex h-11 min-w-11 items-center justify-center rounded-full border-2 border-[var(--color-border)] px-2"
+          className="chip-action-btn focus-ring border-2 border-[var(--color-border)]"
         >
-          {previewing ? "…" : "🔊"}
+          {previewing ? "…" : "🔊 试听"}
         </button>
         <button
           type="button"
           onClick={onCorrect}
-          className="focus-ring h-11 rounded-full border-2 border-[var(--color-border)] px-3 text-[var(--color-fg-muted)]"
+          aria-label={`修改「${word.text}」的读音`}
+          className="chip-action-btn focus-ring border-2 border-[var(--color-border)] text-[var(--color-fg-muted)]"
         >
-          读音不对
+          {/* 手机两列布局下「读音不对」四个字会断行成「读音不 / 对」。「改读音」
+              既短一个字，也更直接地说明点下去会发生什么。 */}
+          ✏️ 改读音
         </button>
       </div>
 
-      {duplicate && (
-        <p className="max-w-[130px] text-center text-[14px] text-[var(--color-fg-muted)]">
-          已在必听词里
-        </p>
-      )}
+      {duplicate && <p className="chip-note text-[var(--color-fg-muted)]">已在必听词里</p>}
       {word.pinyinUncertain && (
-        <p className="max-w-[130px] text-center text-[14px] text-[var(--color-warning)]">
-          这个词的读音需要你确认
-        </p>
+        <p className="chip-note text-[var(--color-warning)]">这个词的读音需要你确认</p>
       )}
-      {degraded && (
-        <p className="max-w-[130px] text-center text-[13px] text-[var(--color-fg-muted)]">
-          读音可能不准
-        </p>
-      )}
+      {degraded && <p className="chip-note text-[var(--color-fg-muted)]">读音可能不准</p>}
     </div>
   );
 }

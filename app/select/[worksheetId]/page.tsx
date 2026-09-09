@@ -209,7 +209,7 @@ export default function SelectPage({
 
   if (data === undefined) {
     return (
-      <main className="flex flex-1 items-center justify-center p-6 text-[20px] text-[var(--color-fg-muted)]">
+      <main className="flex flex-1 items-center justify-center p-6 text-body-fluid text-[var(--color-fg-muted)]">
         正在加载识别结果…
       </main>
     );
@@ -228,9 +228,9 @@ export default function SelectPage({
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 pb-28">
-      <h1 className="text-[clamp(22px,3.4vmin,30px)] font-bold">{data.title ?? "选词"}</h1>
+      <h1 className="text-page-title font-bold">{data.title ?? "选词"}</h1>
 
-      <div className="sticky top-0 z-10 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 text-center text-[clamp(20px,3vmin,26px)] font-semibold">
+      <div className="sticky top-0 z-10 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 text-center text-summary font-semibold">
         必听 {requiredCount} ＋ 选听 {optionalCount} ＝ {totalCount} 个
       </div>
 
@@ -246,8 +246,8 @@ export default function SelectPage({
       )}
 
       <section>
-        <h2 className="mb-3 text-[20px] font-bold">必听词语（不能取消）</h2>
-        <div className="flex flex-wrap gap-4">
+        <h2 className="mb-3 text-heading font-bold">必听词语（不能取消）</h2>
+        <div className="chip-grid">
           {data.required.map((w) => (
             <WordChip
               key={w.id}
@@ -263,15 +263,17 @@ export default function SelectPage({
       </section>
 
       <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[20px] font-bold">生字组词（每行选一个）</h2>
+        {/* 窄屏上标题与按钮并排会双双断行、挤成一团，改为纵向堆叠；宽屏才并排。
+            按钮文案也收短——「每行一个」标题里已经说过了，不必在按钮上重复。 */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-heading font-bold">生字组词（每行选一个）</h2>
           <button
             type="button"
             onClick={handlePick}
             disabled={picking}
-            className="focus-ring tap-target rounded-2xl bg-[var(--color-primary)] px-4 font-semibold text-[var(--color-primary-fg)] disabled:opacity-50"
+            className="focus-ring tap-target w-full shrink-0 whitespace-nowrap rounded-2xl bg-[var(--color-primary)] px-6 font-semibold text-[var(--color-primary-fg)] disabled:opacity-50 sm:w-auto"
           >
-            {picking ? "选词中…" : "✨ 帮我选（每行一个）"}
+            {picking ? "选词中…" : "✨ 帮我选"}
           </button>
         </div>
 
@@ -280,11 +282,11 @@ export default function SelectPage({
           return (
             <div key={row.rowIndex} className="rounded-2xl border-2 border-[var(--color-border)] p-4">
               <div className="mb-3 flex items-baseline gap-3">
-                <span className="pinyin text-[14px] text-[var(--color-fg-muted)]">{row.pinyin}</span>
-                <span className="text-[22px] font-bold">{row.char}</span>
-                <span className="text-[15px] text-[var(--color-fg-muted)]">第 {row.rowIndex + 1} 行</span>
+                <span className="pinyin text-[length:var(--fs-card-pinyin)] text-[var(--color-fg-muted)]">{row.pinyin}</span>
+                <span className="text-[clamp(22px,3.4vmin,28px)] font-bold">{row.char}</span>
+                <span className="text-[length:var(--fs-card-pinyin)] text-[var(--color-fg-muted)]">第 {row.rowIndex + 1} 行</span>
               </div>
-              <div className="flex flex-wrap gap-4">
+              <div className="chip-grid">
                 {row.words.map((w) => (
                   <WordChip
                     key={w.id}

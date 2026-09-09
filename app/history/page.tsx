@@ -92,12 +92,12 @@ export default function HistoryPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-5 px-5 py-8">
-      <h1 className="text-[24px] font-bold">历史记录</h1>
+      <h1 className="text-page-title font-bold">历史记录</h1>
 
-      {history === undefined && <p className="text-[18px] text-[var(--color-fg-muted)]">正在加载…</p>}
-      {history === null && <p className="text-[18px] text-[var(--color-fg-muted)]">加载失败了，请稍后再试。</p>}
+      {history === undefined && <p className="text-body-fluid text-[var(--color-fg-muted)]">正在加载…</p>}
+      {history === null && <p className="text-body-fluid text-[var(--color-fg-muted)]">加载失败了，请稍后再试。</p>}
       {history && history.length === 0 && (
-        <p className="text-[18px] text-[var(--color-fg-muted)]">还没有听写记录。</p>
+        <p className="text-body-fluid text-[var(--color-fg-muted)]">还没有听写记录。</p>
       )}
 
       <div className="flex flex-col gap-3">
@@ -108,10 +108,10 @@ export default function HistoryPage() {
               onClick={() => toggleOpen(row.sessionId)}
               className="tap-target focus-ring flex w-full flex-col items-start justify-center gap-1 px-5 py-3 text-left"
             >
-              <span className="text-[19px] font-semibold">
+              <span className="text-body-fluid font-semibold">
                 {formatDate(row.createdAt)} {row.worksheetTitle ? `· ${row.worksheetTitle}` : ""}
               </span>
-              <span className="text-[16px] text-[var(--color-fg-muted)]">
+              <span className="text-[length:var(--fs-chip-btn)] text-[var(--color-fg-muted)]">
                 共 {row.total} 个 · 跳过 {row.skipped} 个{row.finishedAt ? "" : " · 未做完"}
               </span>
             </button>
@@ -119,15 +119,15 @@ export default function HistoryPage() {
             {openSessionId === row.sessionId && (
               <div className="border-t-2 border-[var(--color-border)] p-4">
                 {detailLoading && !detailCache[row.sessionId] && (
-                  <p className="text-[16px] text-[var(--color-fg-muted)]">加载词表中…</p>
+                  <p className="text-[length:var(--fs-chip-btn)] text-[var(--color-fg-muted)]">加载词表中…</p>
                 )}
                 {detailCache[row.sessionId] && (
-                  <div className="flex flex-wrap gap-4">
+                  <div className="chip-grid">
                     {detailCache[row.sessionId].attempts.map((a) => (
                       <div key={a.id} className="flex flex-col items-center gap-1">
                         <PinyinWord text={a.word.text} pinyin={a.word.pinyin} size="sm" />
                         <span
-                          className={`text-[13px] ${
+                          className={`text-[length:var(--fs-card-pinyin)] ${
                             a.status === "skipped"
                               ? "text-[var(--color-warning)]"
                               : "text-[var(--color-fg-muted)]"

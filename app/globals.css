@@ -38,14 +38,29 @@
   --fs-btn-primary: clamp(24px, 5vmin, 44px);
   --h-tap-secondary: clamp(88px, 11dvh, 130px);
   --fs-btn-secondary: clamp(20px, 4vmin, 32px);
-  --fs-status: clamp(20px, 3.5vmin, 30px);
-  --fs-body: clamp(20px, 2.6vmin, 24px);
+  --fs-status: clamp(22px, 3.5vmin, 30px);
+  --fs-body: clamp(22px, 2.6vmin, 26px);
   --h-tap-hero: clamp(160px, 32dvh, 320px);
   /* 状态区是孩子真正要看的东西:现在该听还是该写。视觉层级里排「最大」。 */
   --size-status-icon: clamp(64px, 16vmin, 140px);
   --fs-status-text: clamp(24px, 6vmin, 44px);
   --fs-status-pinyin: clamp(26px, 5vmin, 40px);
   --fs-btn-hero: clamp(26px, 6vmin, 44px);
+
+  /* PROJECT.md §11 D-27：手机竖屏 vmin≈3.9px，clamp 的中间项在手机上恒取
+     不到，下限就是手机上的真实字号，必须按手机观感定，不是「兜底最小值」。
+     以下新增令牌覆盖区块标题、汇总条、页面主标题、卡片汉字/拼音、卡片内
+     小按钮——原先这些地方大多是写死的 px，在手机上普遍偏小。 */
+  --fs-heading: clamp(24px, 3vmin, 28px);
+  --fs-summary: clamp(24px, 3.2vmin, 30px);
+  --fs-page-title: clamp(28px, 4.5vmin, 40px);
+  --fs-card-hanzi: clamp(26px, 5.5vmin, 32px);
+  --fs-card-hanzi-long: clamp(22px, 4.5vmin, 28px);
+  --fs-card-pinyin: clamp(15px, 2.6vmin, 18px);
+  --fs-chip-btn: clamp(17px, 2.4vmin, 20px);
+  /* PROJECT.md §11 D-29：选词页的试听/读音不对是家长低频操作，下限
+     48px（仍高于 WCAG 44px），不套用听写页 88px 的孩子高频盲操作标准。 */
+  --h-tap-chip: clamp(48px, 6vmin, 56px);
 }
 
 @theme inline {
@@ -168,6 +183,113 @@ button,
 }
 .text-status-fluid {
   font-size: var(--fs-status);
+}
+/* 区块标题 / 汇总条 / 页面主标题，PROJECT.md §11 D-27。 */
+.text-heading {
+  font-size: var(--fs-heading);
+}
+.text-summary {
+  font-size: var(--fs-summary);
+}
+.text-page-title {
+  font-size: var(--fs-page-title);
+}
+
+/* ---------------------------------------------------------------------
+   选词页词语卡片栅格与卡片内部（PROJECT.md §11 D-28、D-29）
+   栅格按视口分档而不是 auto-fit/auto-fill——auto-fit 按可用宽度自己塞进
+   尽可能多列，正是手机上一排挤 5 个的原因。改为固定断点：手机 2 列、
+   480–767px 3 列、≥768px 4 列（上限）。
+--------------------------------------------------------------------- */
+.chip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 3vmin, 20px);
+}
+@media (min-width: 480px) {
+  .chip-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 768px) {
+  .chip-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.chip-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* 卡片主体：汉字+拼音（经 PinyinWord 渲染），字号靠 --fs-card-hanzi /
+   --fs-card-pinyin 撑大，不再是写死的 22px/13px。 */
+.chip-hanzi-btn {
+  width: 100%;
+  min-height: clamp(84px, 13vmin, 120px);
+  padding: clamp(12px, 2.6vmin, 18px) clamp(8px, 2vmin, 12px);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* 「🔊 试听」「读音不对」两个家长低频操作按钮：D-29 定 48px 下限，一行两个
+   各占一半宽度并留够间距，避免在窄卡片里互相误触。 */
+.chip-actions {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: clamp(10px, 2.5vmin, 16px);
+  width: 100%;
+}
+.chip-action-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--h-tap-chip);
+  font-size: var(--fs-chip-btn);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 clamp(6px, 1.5vmin, 10px);
+  /* 两列布局下按钮很窄，标签一旦断行就会出现「读音不 / 对」这种割裂的两行。
+     标签本身已控制在 3 个字以内，禁止换行即可。 */
+  white-space: nowrap;
+}
+
+.chip-note {
+  width: 100%;
+  text-align: center;
+  font-size: var(--fs-card-pinyin);
+}
+
+/* ---------------------------------------------------------------------
+   上传页（/upload）：同样不能顶部塌空、也不能在中间留一整块空白。用和
+   完成页一样的手法——内容区自己 flex-grow 并在内部居中，而不是靠
+   margin-top:auto 把一大块空白全部挤到按钮上方（协调者反馈：真机截图里
+   那块空白就是这么来的）。
+--------------------------------------------------------------------- */
+.upload-shell {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.upload-block {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 3vmin, 28px);
 }
 
 .focus-ring:focus-visible {

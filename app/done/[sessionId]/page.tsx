@@ -77,9 +77,13 @@ export default function DonePage({
 
       {result && (
         <div className="done-block">
-          {/* D-4：hintCount 是「用过提示的词数」，不是提示次数总和。 */}
+          {/* D-4：hintCount 是「用过提示的词数」，不是提示次数总和。拆成两行
+             而不是一整句——390px 宽下一整句会把最后一个字挤到单独一行。 */}
           <p className="text-body-fluid text-[var(--color-fg-muted)]">
-            共 {result.total} 个 · 跳过 {result.skipped} 个 · 有 {result.hintCount} 个词用过提示
+            共 {result.total} 个 · 跳过 {result.skipped} 个
+          </p>
+          <p className="text-body-fluid text-[var(--color-fg-muted)]">
+            有 {result.hintCount} 个词用过提示
           </p>
         </div>
       )}
@@ -87,7 +91,7 @@ export default function DonePage({
       {result && result.skippedWords.length > 0 && (
         <div className="done-block">
           <section className="w-full rounded-2xl border-2 border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] p-4">
-            <h2 className="mb-3 text-body-fluid font-bold text-[var(--color-warning)]">重点看</h2>
+            <h2 className="mb-3 text-heading font-bold text-[var(--color-warning)]">重点看</h2>
             <div className="flex flex-wrap justify-center gap-4">
               {result.skippedWords.map((w) => (
                 <PinyinWord key={w.id} text={w.text} pinyin={w.pinyin} size="sm" />
