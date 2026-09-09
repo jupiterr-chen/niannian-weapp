@@ -1,3 +1,7 @@
+// Inlined as a template string (not read from a .sql file at runtime) because
+// __dirname-based file reads break under webpack/turbopack bundling once this
+// module is pulled into an API route — see PROJECT.md §11 D-14.
+export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS worksheet (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at  TEXT NOT NULL,
@@ -24,7 +28,7 @@ CREATE TABLE IF NOT EXISTS worksheet_word (
   row_pinyin   TEXT,                  -- 该生字的拼音（生字本身可能是多音字，必须持久化，不要现算）
   row_index    INTEGER,               -- 生字行序号，从 0 开始；required 的为 NULL
   ord          INTEGER NOT NULL,      -- 行内原始顺序 / required 内原始顺序
-  PRIMARY KEY (worksheet_id, word_id)
+  PRIMARY KEY (worksheet_id, word_id, bucket)
 );
 
 CREATE TABLE IF NOT EXISTS session (
@@ -59,3 +63,4 @@ CREATE TABLE IF NOT EXISTS mistake (
 
 CREATE INDEX IF NOT EXISTS idx_attempt_session ON attempt(session_id, seq);
 CREATE INDEX IF NOT EXISTS idx_ww_sheet ON worksheet_word(worksheet_id, bucket);
+`;

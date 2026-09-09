@@ -1,26 +1,119 @@
 @import "tailwindcss";
 
+/* 设计令牌。§9 硬指标：正文 ≥20px、可点区 ≥88px、对比度 ≥4.5:1、深浅色都要清晰。
+   全部用不透明的深色/浅色文字，不用浅灰做正文——浅灰在小屏幕、老花眼、强光下
+   经常连 3:1 都不到。 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-fg: #14171a;
+  --color-fg-muted: #44494e;
+  --color-border: #d7dbe0;
+  --color-primary: #1d4ed8;
+  --color-primary-fg: #ffffff;
+  --color-primary-active: #1e3a8a;
+  --color-success: #15803d;
+  --color-success-bg: #ecfdf3;
+  --color-success-fg: #ffffff;
+  --color-warning: #a16207;
+  --color-warning-bg: #fef9c3;
+  --color-warning-border: #eab308;
+  --color-danger: #b91c1c;
+  --color-danger-bg: #fef2f2;
+  --color-locked-bg: #ecfdf3;
+  --color-locked-fg: #15803d;
+  --color-locked-border: #86efac;
+  --color-chip-bg: #eef0f3;
+  --color-chip-fg: #33383d;
+  --color-focus: #1d4ed8;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-fg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --color-bg: #0d1117;
+    --color-bg-elevated: #161b22;
+    --color-fg: #f0f2f5;
+    --color-fg-muted: #c2c8cf;
+    --color-border: #30363d;
+    --color-primary: #5b9bff;
+    --color-primary-fg: #06131f;
+    --color-primary-active: #3f7de0;
+    --color-success: #4ade80;
+    --color-success-bg: #10251a;
+    --color-success-fg: #06130c;
+    --color-warning: #facc15;
+    --color-warning-bg: #2b2306;
+    --color-warning-border: #a16207;
+    --color-danger: #f87171;
+    --color-danger-bg: #2b1212;
+    --color-locked-bg: #10251a;
+    --color-locked-fg: #4ade80;
+    --color-locked-border: #14532d;
+    --color-chip-bg: #1c2128;
+    --color-chip-fg: #e6e9ed;
+    --color-focus: #5b9bff;
   }
 }
 
+html {
+  height: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans), "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  font-size: 20px;
+  line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* 任何可点元素的最小高度，§9 硬指标。 */
+.tap-target {
+  min-height: 88px;
+}
+
+/* 拼音：等宽字体、比汉字小一号，永远叠在汉字正上方，不折叠。 */
+.pinyin {
+  font-family: var(--font-mono), "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+
+/* 听写页序号：≥72px 且用等宽数字对齐，翻页时不跳动。 */
+.seq-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.focus-ring:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

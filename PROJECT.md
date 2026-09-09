@@ -387,6 +387,13 @@ TTS_SPEED=1.0
 | D-4 | `finishSession` 的 `hintCount` 含义 | 定义为**用过提示的词数**（`hint_level > 0` 的 attempt 条数），不是 hint_level 总和。前端文案相应写作「有 K 个词用过提示」。 |
 | D-5 | `weight()` 以 wordId 为键 | 保持。`pickOptional` 只在词落库之后调用，id 必然存在；无 id 时退化为权重 1 是可接受的降级。 |
 | D-6 | `.gitignore` 的 `.env*` 会忽略 `.env.example` | 已加 `!.env.example` 例外。 |
+| D-18 | `finishSession` 必须幂等 | 现在每调用一次就重跑一遍 `applyAttemptToMistakes`，把 `skip_count`/`hint_sum` 反复累加——**这是数据污染，且会直接扭曲选词权重**。改法：`finished_at` 已有值时，只读出统计返回，不再重算 mistakes。前端刷新 `/done` 页、误触、重试都会触发这条路径，不能靠前端自律。 |
+| D-19 | 补 `GET /api/worksheet/:id` | 选词页现在靠 `sessionStorage` 传数据，**家长一刷新就全没了**，只能退回重新上传。这是识别链路唯一的人工闸口，不能这么脆。补一个只读接口，返回与 `POST /api/worksheet` 相同的结构。 |
+| D-20 | 重复词标记由服务端给出 | 前端为了把「已在必听里」的行内词置灰，自己近似重实现了一份 `normalize()`，与权威实现有分叉风险。改为服务端在 `rows[].words[]` 上直接给 `duplicateOfRequired: boolean`，用 `lib/core/normalize.ts` 的权威实现算。前端不做任何文本归一化。 |
+| D-14 | schema 改为内联常量 | **删除 `lib/db/schema.sql`，改为 `lib/db/schema.ts` 导出的模板字符串常量。** `__dirname + schema.sql` 在 webpack 和 turbopack 下都会失效（打包后路径不存在），这是一个会阻断全部数据库路由的真 bug。`process.cwd()` 只是把问题推给部署环境；内联成常量则彻底不依赖文件系统，在 `output: 'standalone'` 的 Docker 镜像里也天然正确。 |
+| D-15 | `worksheet_word` 主键 | **改为 `PRIMARY KEY (worksheet_id, word_id, bucket)`。** 作业纸上「如果」确实同时出现在必听框和「如」字行里，数据模型就该如实表达这件事。`saveWorksheetWords` 存**未过滤**的完整行（每行 3 个词），剔重交给 `pickOptional` 按文本做——它本来就是这么设计的。API 层现有的过滤绕行要删掉：它会导致前端拿到的 rows 和库里存的不一致，刷新后家长看到的东西会变。 |
+| D-16 | `session.cursor` 的更新位置 | 不要给 `PATCH /api/attempt/:id` 加 `sessionId`/`seq` 参数。**`updateAttempt` 内部用一条 SQL 自己更新 cursor**：`UPDATE session SET cursor = MAX(cursor, (SELECT seq FROM attempt WHERE id=?)) WHERE id = (SELECT session_id FROM attempt WHERE id=?)`。逻辑属于数据层，不该外泄到 HTTP 契约。 |
+| D-17 | `pick` 的返回字段 | 返回 `{ id, text, pinyin, rowIndex, char }`。前端要做「行内换词」，必须知道选中的词属于哪一行。 |
 | D-10 | `putCache` 的 meta 参数 | **改为必填**：`putCache(key, audio, mime, meta: { ttsText, pinyin })`。可选参数一定会被忘记，而忘记的后果是读音修正后旧音频清不掉——让类型系统强制它。 |
 | D-11 | 降级音频绝不进持久缓存 | `SynthOutput` 增加 `degraded?: boolean`。SSML 回落纯文本时置 `true`；`putCache` 遇到 `degraded` 直接拒绝写盘；`GET /api/audio` 对降级结果设响应头 `X-TTS-Degraded: 1`，前端据此显示「读音可能不准」。**理由**：降级音频一旦落盘就永久固化，一个读错的多音字会天天错下去，且无声无息，直接违背 G2。 |
 | D-12 | SSML 回落的触发条件收窄 | 只在**业务错误**（HTTP 200 但 `code ≠ 3000`）时回落纯文本。网络/超时错误已经被 `postWithRetry` 重试过，再用纯文本重试一遍只是徒增延迟，还可能在网络恢复的瞬间悄悄返回一个未经注音的读音。网络类错误直接向上抛。 |

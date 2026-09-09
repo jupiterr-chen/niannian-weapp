@@ -406,12 +406,19 @@ export function updateSessionCursor(sessionId: number, cursor: number): void {
 
 export const finishSession = db.transaction(
   (sessionId: number): { total: number; skipped: number; hintCount: number; skippedWords: WordRow[] } => {
-    db.prepare(`UPDATE session SET finished_at = ? WHERE id = ?`).run(
-      nowIso(),
-      sessionId
-    );
+    // Idempotent (PROJECT.md §11 D-18): a second call (double-submit, page
+    // refresh on /done, StrictMode double-invoke) must not re-run
+    // applyAttemptToMistakes — that would double-count skip_count/hint_sum
+    // and distort §4.4 word-selection weight.
+    const existing = db
+      .prepare<{ finished_at: string | null }>(`SELECT finished_at FROM session WHERE id = ?`)
+      .get(sessionId);
+    const alreadyFinished = (existing?.finished_at ?? null) !== null;
 
-    applyAttemptToMistakes(sessionId);
+    if (!alreadyFinished) {
+      db.prepare(`UPDATE session SET finished_at = ? WHERE id = ?`).run(nowIso(), sessionId);
+      applyAttemptToMistakes(sessionId);
+    }
 
     const attemptDbRows = db
       .prepare<AttemptDbRow>(`SELECT * FROM attempt WHERE session_id = ?`)
@@ -429,28 +436,37 @@ export const finishSession = db.transaction(
 
 // --- attempt --------------------------------------------------------------
 
-export function updateAttempt(
-  attemptId: number,
-  patch: { status?: AttemptStatus; replayCount?: number; hintLevel?: number }
-): void {
-  const fields: string[] = [];
-  const values: (string | number)[] = [];
-  if (patch.status !== undefined) {
-    fields.push("status = ?");
-    values.push(patch.status);
+export const updateAttempt = db.transaction(
+  (
+    attemptId: number,
+    patch: { status?: AttemptStatus; replayCount?: number; hintLevel?: number }
+  ): void => {
+    const fields: string[] = [];
+    const values: (string | number)[] = [];
+    if (patch.status !== undefined) {
+      fields.push("status = ?");
+      values.push(patch.status);
+    }
+    if (patch.replayCount !== undefined) {
+      fields.push("replay_count = ?");
+      values.push(patch.replayCount);
+    }
+    if (patch.hintLevel !== undefined) {
+      fields.push("hint_level = ?");
+      values.push(patch.hintLevel);
+    }
+    if (fields.length === 0) return;
+    values.push(attemptId);
+    db.prepare(`UPDATE attempt SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+
+    // PROJECT.md §11 D-16: cursor tracking belongs in the data layer, not
+    // leaked into the PATCH /api/attempt/:id request body as sessionId/seq.
+    db.prepare(
+      `UPDATE session SET cursor = MAX(cursor, (SELECT seq FROM attempt WHERE id = ?))
+       WHERE id = (SELECT session_id FROM attempt WHERE id = ?)`
+    ).run(attemptId, attemptId);
   }
-  if (patch.replayCount !== undefined) {
-    fields.push("replay_count = ?");
-    values.push(patch.replayCount);
-  }
-  if (patch.hintLevel !== undefined) {
-    fields.push("hint_level = ?");
-    values.push(patch.hintLevel);
-  }
-  if (fields.length === 0) return;
-  values.push(attemptId);
-  db.prepare(`UPDATE attempt SET ${fields.join(", ")} WHERE id = ?`).run(...values);
-}
+);
 
 // --- mistake ----------------------------------------------------------------
 
