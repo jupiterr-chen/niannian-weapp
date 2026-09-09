@@ -29,7 +29,7 @@ export function BigButton({
 }: BigButtonProps) {
   return (
     <button
-      className={`tap-target focus-ring w-full rounded-2xl px-6 text-[22px] font-semibold leading-snug transition-opacity disabled:opacity-50 ${VARIANT_CLASS[variant]} ${className}`}
+      className={`tap-target focus-ring w-full rounded-2xl px-6 font-semibold leading-snug transition-opacity disabled:opacity-50 ${VARIANT_CLASS[variant]} ${className}`}
       disabled={disabled}
       {...rest}
     >

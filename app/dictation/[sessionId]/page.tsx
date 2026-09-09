@@ -3,7 +3,7 @@
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BigButton } from "@/components/BigButton";
-import { LongPressButton } from "@/components/LongPressButton";
+import { ConfirmEndButton } from "@/components/ConfirmEndButton";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { clearLastSession } from "@/components/clientStorage";
 
@@ -53,7 +53,6 @@ interface SessionFull {
 type PlayState = "idle" | "playing" | "waiting";
 
 const REPLAY_DEBOUNCE_MS = 800;
-const END_HOLD_MS = 1000;
 
 async function fetchTts(
   wordId: number,
@@ -351,71 +350,88 @@ export default function DictationPage({
   const currentAttempt = attempts[cursorIndex];
   const total = attempts.length;
   const progressPct = Math.round((currentAttempt.seq / total) * 100);
+  // 图标与文字分开：孩子真正要看的是「现在该听还是该写」，这是这一屏最
+  // 重要的信息，视觉层级排最大（协调者反馈 2026-09-09）。
+  const statusIcon = playState === "playing" ? "🔊" : "✍️";
   const statusText =
-    playState === "playing" ? (replaying ? "🔊 正在朗读（慢速再读一遍）" : "🔊 正在朗读") : "✍️ 轮到你写啦";
+    playState === "playing" ? (replaying ? "正在朗读（慢速再读一遍）" : "正在朗读") : "轮到你写啦";
+  // 「还有 N 个词没写完」：当前词及之后都还没完成。
+  const remainingCount = total - cursorIndex;
 
   return (
-    <main className="relative flex flex-1 flex-col items-center justify-between gap-8 px-6 py-10">
+    <main className="dictation-shell">
       {!unlocked && (
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-6 bg-[var(--color-bg)] p-6 text-center">
-          <p className="text-[22px]">准备好了就点一下，开始听写</p>
+          <p className="text-status-fluid">准备好了就点一下，开始听写</p>
           <button
             type="button"
             onClick={handleUnlock}
-            className="tap-target focus-ring flex w-full max-w-xs items-center justify-center rounded-3xl bg-[var(--color-primary)] px-8 text-[26px] font-bold text-[var(--color-primary-fg)]"
+            className="dict-btn-main focus-ring flex w-full max-w-xs items-center justify-center"
           >
             ▶ 开始听写
           </button>
         </div>
       )}
 
-      <div className="flex w-full max-w-md flex-col items-center gap-3">
-        <div className="seq-number text-[72px] font-bold leading-none">
-          第 {currentAttempt.seq} / {total} 个
+      <div className="dictation-pane dictation-pane-info">
+        <div className="dictation-header">
+          <div className="seq-line">
+            <span className="seq-label">第</span>
+            <span className="seq-number">
+              {currentAttempt.seq} / {total}
+            </span>
+            <span className="seq-label">个</span>
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--color-chip-bg)]">
+            <div
+              className="h-full rounded-full bg-[var(--color-primary)] transition-[width]"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </div>
-        <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--color-chip-bg)]">
-          <div
-            className="h-full rounded-full bg-[var(--color-primary)] transition-[width]"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-        <p className="text-[20px] text-[var(--color-fg-muted)]">{statusText}</p>
-        {degraded && <p className="text-[15px] text-[var(--color-fg-muted)]">读音可能不准</p>}
-        {currentAttempt.hintLevel >= 3 && (
-          <p className="pinyin mt-2 text-[24px] text-[var(--color-warning)]">{currentAttempt.word.pinyin}</p>
-        )}
-      </div>
 
-      <div className="flex w-full max-w-md flex-col gap-4">
-        <button
-          type="button"
-          onClick={onReplay}
-          disabled={!unlocked}
-          className="tap-target focus-ring w-full rounded-3xl bg-[var(--color-primary)] text-[28px] font-bold text-[var(--color-primary-fg)] disabled:opacity-50"
-        >
-          再 读 一 遍
-        </button>
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={() => advance("skipped")}
-            disabled={!unlocked}
-            className="tap-target focus-ring flex-1 rounded-3xl border-2 border-[var(--color-border)] text-[22px] font-semibold disabled:opacity-50"
-          >
-            不会，跳过
-          </button>
-          <button
-            type="button"
-            onClick={() => advance("written")}
-            disabled={!unlocked}
-            className="tap-target focus-ring flex-1 rounded-3xl bg-[var(--color-success)] text-[22px] font-semibold text-[var(--color-success-fg)] disabled:opacity-50"
-          >
-            写好了，下一个
-          </button>
+        {/* 状态区是这一屏的视觉主角——孩子只关心「现在该听还是该写」。 */}
+        <div className="dictation-status">
+          <div className="status-icon" aria-hidden="true">
+            {statusIcon}
+          </div>
+          <p className="status-text">{statusText}</p>
+          {degraded && <p className="status-sub">读音可能不准</p>}
+          {currentAttempt.hintLevel >= 3 && (
+            <p className="pinyin status-pinyin">{currentAttempt.word.pinyin}</p>
+          )}
         </div>
       </div>
 
-      <LongPressButton label="结束听写" durationMs={END_HOLD_MS} onComplete={handleEnd} />
+      <div className="dictation-pane dictation-pane-actions">
+        <div className="dictation-buttons">
+          <button type="button" onClick={onReplay} disabled={!unlocked} className="dict-btn-main focus-ring disabled:opacity-50">
+            再 读 一 遍
+          </button>
+          <div className="dict-btn-row">
+            <button
+              type="button"
+              onClick={() => advance("skipped")}
+              disabled={!unlocked}
+              className="dict-btn-secondary focus-ring border-2 border-[var(--color-border)] disabled:opacity-50"
+            >
+              不会，跳过
+            </button>
+            <button
+              type="button"
+              onClick={() => advance("written")}
+              disabled={!unlocked}
+              className="dict-btn-secondary focus-ring bg-[var(--color-success)] text-[var(--color-success-fg)] disabled:opacity-50"
+            >
+              写好了，下一个
+            </button>
+          </div>
+        </div>
+
+        <div className="dictation-end">
+          <ConfirmEndButton remainingCount={remainingCount} onConfirmEnd={handleEnd} />
+        </div>
+      </div>
     </main>
   );
 }

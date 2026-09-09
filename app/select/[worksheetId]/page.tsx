@@ -218,7 +218,7 @@ export default function SelectPage({
   if (data === null) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-[20px]">找不到这份识别结果了，可能是链接不对或者作业记录已经不在了。</p>
+        <p className="text-body-fluid">找不到这份识别结果了，可能是链接不对或者作业记录已经不在了。</p>
         <Link href="/upload" className="w-full max-w-xs">
           <BigButton>重新上传</BigButton>
         </Link>
@@ -227,20 +227,20 @@ export default function SelectPage({
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6 pb-28">
-      <h1 className="text-[24px] font-bold">{data.title ?? "选词"}</h1>
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 pb-28">
+      <h1 className="text-[clamp(22px,3.4vmin,30px)] font-bold">{data.title ?? "选词"}</h1>
 
-      <div className="sticky top-0 z-10 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 text-center text-[22px] font-semibold">
+      <div className="sticky top-0 z-10 rounded-2xl border-2 border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 text-center text-[clamp(20px,3vmin,26px)] font-semibold">
         必听 {requiredCount} ＋ 选听 {optionalCount} ＝ {totalCount} 个
       </div>
 
       {pageError && (
-        <div className="rounded-xl border-2 border-[var(--color-danger)] bg-[var(--color-danger-bg)] p-3 text-[17px] text-[var(--color-danger)]">
+        <div className="rounded-xl border-2 border-[var(--color-danger)] bg-[var(--color-danger-bg)] p-3 text-body-fluid text-[var(--color-danger)]">
           {pageError}
         </div>
       )}
       {correctionNotice && (
-        <div className="rounded-xl border-2 border-[var(--color-success)] bg-[var(--color-success-bg)] p-3 text-[17px] text-[var(--color-success)]">
+        <div className="rounded-xl border-2 border-[var(--color-success)] bg-[var(--color-success-bg)] p-3 text-body-fluid text-[var(--color-success)]">
           {correctionNotice}
         </div>
       )}
@@ -269,7 +269,7 @@ export default function SelectPage({
             type="button"
             onClick={handlePick}
             disabled={picking}
-            className="focus-ring tap-target rounded-2xl bg-[var(--color-primary)] px-4 text-[18px] font-semibold text-[var(--color-primary-fg)] disabled:opacity-50"
+            className="focus-ring tap-target rounded-2xl bg-[var(--color-primary)] px-4 font-semibold text-[var(--color-primary-fg)] disabled:opacity-50"
           >
             {picking ? "选词中…" : "✨ 帮我选（每行一个）"}
           </button>
@@ -301,7 +301,7 @@ export default function SelectPage({
                 ))}
               </div>
               {!hasEligible && (
-                <p className="mt-2 text-[16px] text-[var(--color-fg-muted)]">
+                <p className="mt-2 text-body-fluid text-[var(--color-fg-muted)]">
                   这一行的组词都已经在必听词里了，不用另外选。
                 </p>
               )}
@@ -311,7 +311,7 @@ export default function SelectPage({
       </section>
 
       <div className="fixed inset-x-0 bottom-0 border-t-2 border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-4xl">
           <BigButton onClick={startDictation} disabled={creating}>
             {creating ? "正在准备…" : "开始听写"}
           </BigButton>

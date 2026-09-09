@@ -23,14 +23,14 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-6 py-10">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6 px-6 py-10">
       <div className="mb-4 text-center">
-        <h1 className="text-[28px] font-bold">听写助手</h1>
-        <p className="mt-2 text-[17px] text-[var(--color-fg-muted)]">拍下作业，帮孩子听写生字词</p>
+        <h1 className="text-[clamp(26px,4.5vmin,40px)] font-bold">听写助手</h1>
+        <p className="mt-2 text-body-fluid text-[var(--color-fg-muted)]">拍下作业，帮孩子听写生字词</p>
       </div>
 
       <Link href="/upload" className="block">
-        <BigButton variant="primary" className="!h-[46vh] min-h-[220px] !text-[30px]">
+        <BigButton variant="primary" className="tap-target-hero">
           📷 上传今天的作业
         </BigButton>
       </Link>

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-/* 设计令牌。§9 硬指标：正文 ≥20px、可点区 ≥88px、对比度 ≥4.5:1、深浅色都要清晰。
-   全部用不透明的深色/浅色文字，不用浅灰做正文——浅灰在小屏幕、老花眼、强光下
-   经常连 3:1 都不到。 */
+/* 设计令牌。§9 硬指标：正文 ≥20px、听写页序号 ≥72px、可点区 ≥88px、
+   对比度 ≥4.5:1，深浅色都要清晰。全部用不透明的深色/浅色文字，不用浅灰做
+   正文——浅灰在小屏幕、老花眼、强光下经常连 3:1 都不到。 */
 :root {
   --color-bg: #ffffff;
   --color-bg-elevated: #ffffff;
@@ -26,6 +26,26 @@
   --color-chip-bg: #eef0f3;
   --color-chip-fg: #33383d;
   --color-focus: #1d4ed8;
+
+  /* 响应式尺寸令牌（PROJECT.md §11 D-24）：clamp(下限, 视口相对值, 上限)。
+     下限一律不低于 §9 的硬指标；用 vmin 而不是 vw，使横竖屏都合理；高度相关
+     的用 dvh，正确处理移动浏览器地址栏收放。 */
+  /* 序号是给家长核对用的,不是这一屏最重要的信息——视觉层级里排「中」,
+     故上限收窄,不再是全屏最大元素(协调者反馈 2026-09-09)。 */
+  --size-seq: clamp(72px, 9vmin, 108px);
+  --size-seq-label: clamp(26px, 3.4vmin, 42px);
+  --h-tap-primary: clamp(88px, 13dvh, 150px);
+  --fs-btn-primary: clamp(24px, 5vmin, 44px);
+  --h-tap-secondary: clamp(88px, 11dvh, 130px);
+  --fs-btn-secondary: clamp(20px, 4vmin, 32px);
+  --fs-status: clamp(20px, 3.5vmin, 30px);
+  --fs-body: clamp(20px, 2.6vmin, 24px);
+  --h-tap-hero: clamp(160px, 32dvh, 320px);
+  /* 状态区是孩子真正要看的东西:现在该听还是该写。视觉层级里排「最大」。 */
+  --size-status-icon: clamp(64px, 16vmin, 140px);
+  --fs-status-text: clamp(24px, 6vmin, 44px);
+  --fs-status-pinyin: clamp(26px, 5vmin, 40px);
+  --fs-btn-hero: clamp(26px, 6vmin, 44px);
 }
 
 @theme inline {
@@ -89,9 +109,27 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* 任何可点元素的最小高度，§9 硬指标。 */
+/* 移动端手感修正（通用卫生，不只为结束按钮）：去掉 300ms 点击延迟、禁止长按
+   弹出系统菜单/选中文字。不要放在 body 上——选词页的拼音和词语允许被选中
+   复制，这里只作用于真正的可点元素。 */
+button,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* 任何可点元素的最小高度/字号，§9 硬指标下限。 */
 .tap-target {
-  min-height: 88px;
+  min-height: var(--h-tap-secondary);
+  font-size: var(--fs-btn-secondary);
+}
+
+/* 首页顶部大按钮：比普通 tap-target 更醒目，仍然是 clamp 下限≥88px 的超集。
+   声明顺序须晚于 .tap-target，两者同为单类选择器，级联按源码顺序取最后者。 */
+.tap-target-hero {
+  min-height: var(--h-tap-hero);
+  font-size: var(--fs-btn-hero);
 }
 
 /* 拼音：等宽字体、比汉字小一号，永远叠在汉字正上方，不折叠。 */
@@ -100,15 +138,277 @@ button:disabled {
   letter-spacing: 0.05em;
 }
 
-/* 听写页序号：≥72px 且用等宽数字对齐，翻页时不跳动。 */
+/* 听写页序号：数字≥72px 且用等宽数字对齐，翻页时不跳动。「第」「个」是配角，
+   字号约为数字的 0.4 倍；整行 nowrap，避免在窄屏上断成两行(协调者反馈
+   2026-09-09：断行是倒退)。序号是给家长核对用的，孩子不看，视觉层级里排
+   「中」——真正的视觉主角是下面的 .dictation-status。 */
+.seq-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: clamp(4px, 1vmin, 10px);
+  white-space: nowrap;
+}
+.seq-label {
+  font-size: var(--size-seq-label);
+  font-weight: 600;
+  color: var(--color-fg-muted);
+}
 .seq-number {
+  font-size: var(--size-seq);
+  font-weight: 700;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* 正文/状态文字的响应式尺寸，替代写死的 px。 */
+.text-body-fluid {
+  font-size: var(--fs-body);
+}
+.text-status-fluid {
+  font-size: var(--fs-status);
 }
 
 .focus-ring:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------
+   听写页专用布局（PROJECT.md §11 D-25、D-26）
+   固定一屏、禁止滚动与下拉刷新；竖屏纵向三段式，横屏改左右双栏。
+   用「四个可伸缩块」而不是两端对齐留白，避免中间塌出一整片空洞：头部/
+   提示/按钮/结束入口各占一份弹性空间，谁的内容多谁就自然挤占更多。
+--------------------------------------------------------------------- */
+.dictation-shell {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(14px, 3vmin, 32px);
+  gap: clamp(10px, 2vmin, 20px);
+}
+
+.dictation-pane {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 2vmin, 20px);
+}
+
+/* 信息栏比操作栏多分一点弹性空间——状态区（孩子要看的）比按钮区（家长/
+   孩子都要点的）更该抢屏幕，符合「状态 > 按钮 > 序号 > 结束入口」的层级。 */
+.dictation-pane-info {
+  flex-grow: 1.3;
+}
+.dictation-pane-actions {
+  flex-grow: 1;
+}
+
+/* 头部（序号+进度条）只占自身内容高度，不再跟状态区抢弹性空间——序号是
+   给家长核对用的参考信息，不该长成全屏最大的元素。 */
+.dictation-header {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 1.6vmin, 16px);
+}
+
+/* 状态区：整屏视觉主角。大图标+大字回答孩子唯一关心的问题——现在该听还是
+   该写。用弹性空间撑满信息栏的剩余高度，而不是留白（协调者反馈
+   2026-09-09：这里之前是全屏最空、字却最小的地方，主次颠倒了）。 */
+.dictation-status {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 2vmin, 20px);
+  text-align: center;
+}
+.status-icon {
+  font-size: var(--size-status-icon);
+  line-height: 1;
+}
+.status-text {
+  font-size: var(--fs-status-text);
+  font-weight: 700;
+}
+.status-sub {
+  font-size: var(--fs-body);
+  color: var(--color-fg-muted);
+}
+.status-pinyin {
+  font-size: var(--fs-status-pinyin);
+  color: var(--color-warning);
+}
+
+.dictation-buttons {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 1.8vmin, 20px);
+}
+
+.dictation-end {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  padding-top: clamp(2px, 0.6vmin, 8px);
+}
+
+.dict-btn-row {
+  display: flex;
+  width: 100%;
+  gap: clamp(10px, 2vmin, 20px);
+}
+
+.dict-btn-main {
+  width: 100%;
+  min-height: var(--h-tap-primary);
+  font-size: var(--fs-btn-primary);
+  font-weight: 700;
+  border-radius: 24px;
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+}
+
+.dict-btn-secondary {
+  flex: 1 1 0;
+  min-height: var(--h-tap-secondary);
+  font-size: var(--fs-btn-secondary);
+  font-weight: 600;
+  border-radius: 24px;
+}
+
+@media (orientation: landscape) {
+  .dictation-shell {
+    flex-direction: row;
+  }
+  .dictation-pane {
+    max-width: 640px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   「结束听写」二次确认（PROJECT.md §11 D-23）
+   平时是小号低调的文字按钮；点击后弹出全宽面板，「继续听写」做成视觉主
+   选项、「结束」做次要项，把误触引导向安全的一侧。
+--------------------------------------------------------------------- */
+.end-trigger {
+  min-height: 44px;
+  padding: 0 clamp(10px, 2vmin, 16px);
+  font-size: clamp(14px, 1.8vmin, 17px);
+  font-weight: 500;
+  color: var(--color-fg-muted);
+  background: transparent;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.end-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.45);
+  padding: clamp(12px, 3vmin, 24px);
+}
+
+.end-panel {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.6vmin, 16px);
+  background: var(--color-bg-elevated);
+  border-radius: 24px;
+  padding: clamp(20px, 4vmin, 32px);
+  box-shadow: 0 -8px 30px rgb(0 0 0 / 0.25);
+}
+
+.end-panel-title {
+  font-size: clamp(20px, 3vmin, 26px);
+  font-weight: 700;
+  text-align: center;
+}
+
+.end-panel-sub {
+  font-size: var(--fs-body);
+  color: var(--color-fg-muted);
+  text-align: center;
+}
+
+.end-panel-continue {
+  min-height: var(--h-tap-primary);
+  font-size: var(--fs-btn-primary);
+  font-weight: 700;
+  border-radius: 20px;
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+}
+
+.end-panel-stop {
+  min-height: 52px;
+  font-size: 16px;
+  color: var(--color-danger);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+}
+
+/* ---------------------------------------------------------------------
+   完成页（/done）：同样不能顶部塌空。用「英雄区吸收弹性空间」而不是把整块
+   内容套 justify-center——内容短时 justify-center 会在上下各留一块等大的
+   空白，视觉上却读作「顶部空一大截」。改法：大字大表情的英雄区自己
+   flex-grow 撑满剩余高度并在内部居中，统计/重点看区保持自然高度紧跟其
+   后，按钮钉在底部（协调者反馈 2026-09-09）。
+--------------------------------------------------------------------- */
+.done-shell {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  gap: clamp(8px, 2vmin, 20px);
+}
+
+/* 每一块（标题、统计、重点看——存在几块就是几块）均分弹性空间并各自居中，
+   而不是整页居中或单个大容器兜底。整页居中会把「空白」都堆在第一块内容
+   出现之前，读起来像顶部塌空；均分让内容从接近页面顶部就开始出现，空白
+   拆成小块穿插在内容之间，不再是一整片（协调者反馈 2026-09-09：把标题推
+   到 40% 处、上方全空是倒退）。不存在的块（没有跳过词）直接不渲染，让
+   其余块自动多分一份，不会留出一个专门的空块。 */
+.done-block {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 2vmin, 16px);
+  text-align: center;
+}
+.done-cta {
+  flex: 0 0 auto;
+  width: 100%;
+  padding-top: clamp(12px, 2.4vmin, 24px);
 }
 
 @media (prefers-reduced-motion: reduce) {

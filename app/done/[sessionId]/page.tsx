@@ -65,37 +65,43 @@ export default function DonePage({
   }, [sessionId]);
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-8 px-6 py-10 text-center">
-      <h1 className="text-[36px] font-bold">全部写完 🎉</h1>
+    <main className="done-shell mx-auto flex w-full max-w-2xl flex-1 flex-col items-center px-6 py-10 text-center">
+      <div className="done-block">
+        <h1 className="text-[clamp(36px,7vmin,64px)] font-bold">全部写完 🎉</h1>
 
-      {result === undefined && !error && (
-        <p className="text-[18px] text-[var(--color-fg-muted)]">正在统计…</p>
-      )}
-      {error && <p className="text-[18px] text-[var(--color-fg-muted)]">{error}</p>}
+        {result === undefined && !error && (
+          <p className="text-body-fluid text-[var(--color-fg-muted)]">正在统计…</p>
+        )}
+        {error && <p className="text-body-fluid text-[var(--color-fg-muted)]">{error}</p>}
+      </div>
 
       {result && (
-        <>
+        <div className="done-block">
           {/* D-4：hintCount 是「用过提示的词数」，不是提示次数总和。 */}
-          <p className="text-[18px] text-[var(--color-fg-muted)]">
+          <p className="text-body-fluid text-[var(--color-fg-muted)]">
             共 {result.total} 个 · 跳过 {result.skipped} 个 · 有 {result.hintCount} 个词用过提示
           </p>
-
-          {result.skippedWords.length > 0 && (
-            <section className="w-full rounded-2xl border-2 border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] p-4">
-              <h2 className="mb-3 text-[18px] font-bold text-[var(--color-warning)]">重点看</h2>
-              <div className="flex flex-wrap justify-center gap-4">
-                {result.skippedWords.map((w) => (
-                  <PinyinWord key={w.id} text={w.text} pinyin={w.pinyin} size="sm" />
-                ))}
-              </div>
-            </section>
-          )}
-        </>
+        </div>
       )}
 
-      <Link href="/" className="w-full">
-        <BigButton>回到首页</BigButton>
-      </Link>
+      {result && result.skippedWords.length > 0 && (
+        <div className="done-block">
+          <section className="w-full rounded-2xl border-2 border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] p-4">
+            <h2 className="mb-3 text-body-fluid font-bold text-[var(--color-warning)]">重点看</h2>
+            <div className="flex flex-wrap justify-center gap-4">
+              {result.skippedWords.map((w) => (
+                <PinyinWord key={w.id} text={w.text} pinyin={w.pinyin} size="sm" />
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      <div className="done-cta">
+        <Link href="/" className="block w-full">
+          <BigButton>回到首页</BigButton>
+        </Link>
+      </div>
     </main>
   );
 }
