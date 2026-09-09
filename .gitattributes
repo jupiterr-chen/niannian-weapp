@@ -1,0 +1,8 @@
+# 部署相关文件必须保持 LF。
+# 在 Windows 上开发、部署到 Linux 时，git 默认会把工作区换行符转成 CRLF，
+# 而 CRLF 的 shell 脚本在 Linux 上会报 `bad interpreter: /bin/sh^M`——
+# 报错信息完全看不出根因，排查起来很费时间。
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+docker-compose.yml text eol=lf
+.dockerignore   text eol=lf
