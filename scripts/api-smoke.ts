@@ -5,6 +5,10 @@
 //
 // 只读地借用 lib/core/cachekey.ts 和 lib/tts/cache.ts 来验证第 7 步的缓存
 // 失效行为（见该步注释）——这是脚本自身的验证手段，不修改任何 lib 文件。
+// 这一行必须排在所有其他 import 之前：本脚本自己要算缓存键来验证第 7 步，
+// 若 .env.local 没先加载，脚本用的是 mock 配置（空 speaker、默认采样率）而
+// 服务端用的是真实配置，两边键不一致会误报「新缓存没写入」。
+import "./_env-boot";
 import fs from "node:fs";
 import path from "node:path";
 import { audioCacheKey } from "../lib/core/cachekey";
@@ -295,7 +299,12 @@ async function main(): Promise<void> {
   // === 第 7 步：读音修正 -> 缓存失效 ===
   console.log("\n[7/10] PATCH /api/word/:id/tts-text —— 改读音后验证旧缓存失效");
   const originalWord = worksheet.required.find((w) => w.id === firstAttempt.wordId)!;
-  const newTtsText = `${originalWord.text}测试改音`;
+  // 替换文本必须与原词**等长**：真实的读音修正是同音字等长替换（长大 → 涨大），
+  // 字数与拼音音节数天然对齐。若长度不等，发音词典条目拼不出来，provider 会按
+  // PROJECT.md §11 D-11 标记 degraded，缓存层将正确地拒绝落盘——那样这一步断言
+  // 「新缓存已写入」就会失败，但那是产品的正确行为，不是缺陷。降级路径本身在
+  // 下面的 7b 单独验证。
+  const newTtsText = [...originalWord.text].reverse().join("");
   // 和路由内部 audioCacheKey() 用一样的参数手算旧/新缓存键，直接检查磁盘缓存
   // 文件是否真的被删/被写——比单纯比较响应字节更能准确证明「缓存确实被清
   // 掉」，原因见下方第 7 步内的说明。
@@ -353,6 +362,53 @@ async function main(): Promise<void> {
   }
   assert(newCacheWritten, 7, "改读音后重新合成应该写入一份新的缓存文件，但没有观察到");
   console.log("  通过");
+
+  // === 第 7b 步：降级音频绝不落盘（PROJECT.md §11 D-11）===
+  // 这条曾经被误判成产品缺陷：脚本原本把读音改成一个比原词长得多的文本，
+  // provider 拼不出发音词典条目于是标记 degraded，缓存层正确地拒绝落盘，
+  // 断言却期望「新缓存已写入」。mock provider 永远不会触发降级，所以这个
+  // 缺口一直到接上真实 provider 才暴露。现在把它变成显式断言。
+  console.log("\n[7b/10] 降级音频不得进入缓存（D-11）");
+  const isRealTts =
+    (process.env.TTS_PROVIDER ?? "volcano") !== "mock" &&
+    !!process.env.VOLC_TTS_API_KEY &&
+    !!process.env.VOLC_TTS_SPEAKER;
+  if (!isRealTts) {
+    console.log("  跳过：当前是 mock provider，不会触发降级路径（需真实密钥才能验证）");
+  } else {
+    const degradedText = `${originalWord.text}测试改音`; // 故意让字数与音节数对不齐
+    const degradedKey = audioCacheKey({
+      ttsText: degradedText,
+      pinyin: originalWord.pinyin,
+      voice: AUDIO_VOICE,
+      speed: AUDIO_SPEED,
+      repeat: AUDIO_REPEAT,
+      gapMs: AUDIO_GAP_MS,
+      seqLabel: AUDIO_SEQ,
+    });
+    const patchDegraded = await fetchJson<{ ok: true }>(
+      7,
+      `${BASE_URL}/api/word/${firstAttempt.wordId}/tts-text`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ttsText: degradedText }),
+      }
+    );
+    assert(patchDegraded.status === 200, 7, `HTTP 状态应为 200，实际 ${patchDegraded.status}`);
+
+    const degradedRes = await fetch(audioUrl);
+    assert(degradedRes.status === 200, 7, "降级时仍须正常返回音频，不能报错或白屏");
+    const degradedHeader = degradedRes.headers.get("x-tts-degraded");
+    await degradedRes.arrayBuffer();
+    const degradedCached = getCached(degradedKey) !== null;
+    console.log(
+      `  X-TTS-Degraded 响应头: ${degradedHeader ?? "(无)"}；是否落盘: ${degradedCached}`
+    );
+    assert(degradedHeader === "1", 7, "字数与音节数对不齐时应设 X-TTS-Degraded: 1 响应头");
+    assert(!degradedCached, 7, "降级音频绝不允许写入缓存（D-11）");
+    console.log("  通过");
+  }
 
   // === 第 8 步：更新 attempt ===
   console.log("\n[8/10] PATCH /api/attempt/:id —— 一个 skipped，一个 hintLevel=3");
