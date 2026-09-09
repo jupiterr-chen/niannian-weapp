@@ -5,13 +5,9 @@
 // 「继续上次」入口。开始听写时写入，/done 页完成后清除。
 export const LAST_SESSION_KEY = "renee:lastSession";
 
-// sessionStorage：POST /api/worksheet 的完整识别结果，用于把数据从
-// /upload 传给 /select/[worksheetId]——PROJECT.md §7 没有定义
-// GET /api/worksheet/:id，选词页只能在同一个标签页内、经由这份本地暂存
-// 拿到识别结果（详见任务报告里的契约缺口说明）。
-export function worksheetStorageKey(worksheetId: number | string): string {
-  return `renee:worksheet:${worksheetId}`;
-}
+// PROJECT.md §11 D-19 已经补了 GET /api/worksheet/:id，选词页改成直接用它
+// 做单一数据源（刷新页面也能自行恢复），不再需要 sessionStorage 中转
+// /upload 的识别结果——之前那份 worksheetStorageKey 已删除。
 
 export interface LastSessionRecord {
   sessionId: number;

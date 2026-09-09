@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { paths } from "../../../lib/env";
 import { ApiError, handler, ok } from "../../../lib/api/errors";
 import { crossCheckPinyin, getVlmProvider, type RecognizeResult } from "../../../lib/vlm";
+import { normalize } from "../../../lib/core/normalize";
 import {
   createWorksheet,
   saveWorksheetWords,
@@ -34,18 +35,24 @@ function extFor(file: File): string {
   return byName || ".bin";
 }
 
-interface RecognizedWordOut {
+interface RequiredWordOut {
   id: number;
   text: string;
   pinyin: string;
   pinyinUncertain: boolean;
 }
 
+interface RowWordOut extends RequiredWordOut {
+  // D-20：是否与某个必听词 normalize() 后相同，权威算法在
+  // lib/core/normalize.ts，前端不做任何文本归一化。
+  duplicateOfRequired: boolean;
+}
+
 interface RecognizedRowOut {
   char: string;
   pinyin: string;
   rowIndex: number;
-  words: RecognizedWordOut[];
+  words: RowWordOut[];
 }
 
 export const POST = handler(async (request: Request) => {
@@ -114,15 +121,12 @@ export const POST = handler(async (request: Request) => {
   const requiredInput: WordInput[] = recognized.required.map((w) => ({
     wordId: upsertWord(w.text, w.pinyin),
   }));
-  const requiredWordIdSet = new Set(requiredInput.map((r) => r.wordId));
 
-  // 黄金真值里常见「如果」既是必听词、又是「如」这一行的组词候选，两处
-  // upsertWord(text, pinyin) 落到同一个 word.id。worksheet_word 的主键是
-  // (worksheet_id, word_id)，同一个 word_id 不能在同一张 worksheet 里既插
-  // required 又插 optional 一份——这是 lib/db/queries.ts 的 schema 限制，不
-  // 在本任务可改动的文件范围内。反正 pickOptional 本来就会按文本把这类词
-  // 从候选里过滤掉（不影响“帮我选”结果），所以落库前按 word_id 去重即可；
-  // 完整的 3 词展示仍然从 rowWordIdsAll（未去重）组出，原样返回给家长。
+  // D-15：worksheet_word 主键已扩为 (worksheet_id, word_id, bucket)，「如果」
+  // 这类既是必听词、又是某行组词候选的词现在可以如实入库两份。这里不再按
+  // word_id 过滤——存的必须是未过滤的完整行（每行 3 词），否则库里存的和
+  // 家长在页面上看到的会不一致，刷新后内容就变了。剔重完全交给
+  // pickOptional（按文本 normalize 过滤），它本来就是这么设计的。
   const rowWordIdsAll: number[][] = recognized.rows.map((row) =>
     row.words.map((w) => upsertWord(w.text, w.pinyin))
   );
@@ -130,12 +134,14 @@ export const POST = handler(async (request: Request) => {
     char: row.char,
     pinyin: row.pinyin,
     rowIndex,
-    wordIds: rowWordIdsAll[rowIndex].filter((id) => !requiredWordIdSet.has(id)),
+    wordIds: rowWordIdsAll[rowIndex],
   }));
 
   saveWorksheetWords(worksheetId, requiredInput, rowsInput);
 
-  const required: RecognizedWordOut[] = recognized.required.map((w, i) => ({
+  const requiredNormSet = new Set(recognized.required.map((w) => normalize(w.text)));
+
+  const required: RequiredWordOut[] = recognized.required.map((w, i) => ({
     id: requiredInput[i].wordId,
     text: w.text,
     pinyin: w.pinyin,
@@ -150,6 +156,7 @@ export const POST = handler(async (request: Request) => {
       text: w.text,
       pinyin: w.pinyin,
       pinyinUncertain: w.pinyinUncertain ?? false,
+      duplicateOfRequired: requiredNormSet.has(normalize(w.text)),
     })),
   }));
 

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BigButton } from "@/components/BigButton";
-import { worksheetStorageKey } from "@/components/clientStorage";
 
 interface PickedImage {
   id: string;
@@ -115,15 +114,9 @@ export default function UploadPage() {
       }
 
       const worksheet = body as WorksheetSuccess;
-      try {
-        window.sessionStorage.setItem(
-          worksheetStorageKey(worksheet.worksheetId),
-          JSON.stringify(worksheet)
-        );
-      } catch {
-        // sessionStorage 写不进去（隐私模式/容量满）也不阻断流程，选词页会
-        // 自己判断拿不到数据时给出「请重新上传」的出口。
-      }
+      // PROJECT.md §11 D-19：选词页现在直接用 GET /api/worksheet/:id 做单一
+      // 数据源（刷新也能恢复），这里不用再把识别结果暂存到 sessionStorage
+      // 传给下一页了。
       router.push(`/select/${worksheet.worksheetId}`);
     } catch {
       setError("网络好像断开了，请检查网络后重试");

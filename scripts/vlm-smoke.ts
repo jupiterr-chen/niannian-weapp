@@ -2,9 +2,16 @@
 // 读 fixtures/worksheet-01.jpg，调用 provider.recognize() 再过 crossCheckPinyin，
 // 和 tests/fixtures/worksheet-01.ts 的黄金真值逐项比对，打印对照报告。
 // mock provider 下应当 100% PASS——这是脚本自身正确性的自检。
+//
+// 必须先加载 .env.local 再 import lib/vlm（见 scripts/_env.ts 顶部注释：
+// tsx 跑脚本不是 Next.js，不会自动读 .env.local）。lib/vlm/index.ts 和
+// lib/vlm/ark.ts 都在模块顶层 import 了 lib/env，所以这里不能用静态 import，
+// 得等 loadDotEnv() 跑完之后再动态 import，否则永远读不到真实的 ARK_API_KEY。
+import { loadDotEnv } from "./_env";
+loadDotEnv();
+
 import fs from "node:fs";
 import path from "node:path";
-import { crossCheckPinyin, getVlmProvider } from "../lib/vlm";
 import type { RecognizedWord } from "../lib/vlm";
 import { EXPECTED_REQUIRED_COUNT, EXPECTED_ROW_COUNT, REQUIRED_WORDS, ROWS } from "../tests/fixtures/worksheet-01";
 
@@ -21,6 +28,17 @@ function compareWord(
 }
 
 async function main(): Promise<void> {
+  // lib/env 及其下游（lib/vlm、lib/vlm/ark）必须在 loadDotEnv() 之后才
+  // import，原因见文件头注释。
+  const { env } = await import("../lib/env");
+  const { crossCheckPinyin, getVlmProvider } = await import("../lib/vlm");
+
+  console.log(
+    env.vlmProvider === "mock"
+      ? "[vlm-smoke] provider = mock（未检测到 ARK_API_KEY，或未加载到 .env.local；以下为本地假数据，不是真实识别结果）"
+      : "[vlm-smoke] provider = ark（真实识别）"
+  );
+
   const imagePath = path.resolve(__dirname, "..", "fixtures", "worksheet-01.jpg");
   const image = fs.readFileSync(imagePath);
 

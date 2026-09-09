@@ -1,7 +1,13 @@
-// 音频磁盘缓存。键统一用 lib/core/cachekey.ts 的 audioCacheKey() 计算，本文件
-// 不重复实现哈希逻辑。所有文件操作都容错：目录不存在就建，读/写/删失败就当
-// 作缓存未命中/清理失败处理，绝不抛异常打断听写（§5.4「任何一步失败都不得
-// 白屏或卡死」同样适用于缓存层）。
+// 音频磁盘缓存。分两层（§10.6）：
+//   - 成品缓存（本文件原有部分）：一次听写实际会播放的完整 WAV，键用
+//     lib/core/cachekey.ts 的 audioCacheKey() 计算，本文件不重复实现哈希逻辑。
+//   - 分件缓存（本文件新增部分）：火山按词/按「第 N 个」返回的原始 PCM，
+//     供 lib/tts/volcano.ts 在装配前复用——同一个词无论出现在第几题、改
+//     repeat/gapMs 需不需要重新拼装，都只需要合成一次。
+// 所有文件操作都容错：目录不存在就建，读/写/删失败就当作缓存未命中/清理
+// 失败处理，绝不抛异常打断听写（§5.4「任何一步失败都不得白屏或卡死」同样
+// 适用于缓存层）。
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { paths } from "../env";
@@ -148,4 +154,82 @@ export function invalidateWord(ttsText: string, pinyin: string): void {
     }
   }
   if (changed) writeIndex(remaining);
+}
+
+// ---------------------------------------------------------------------------
+// 分件缓存（§10.6）：词与「第 N 个」各自的原始 PCM。落在 data/audio/parts/
+// 下，与成品 WAV（data/audio/<key>.wav）以及成品索引（index.json）完全独立
+// 的命名空间，互不干扰——分件缓存没有「降级不许落盘」的限制（D-11 只作用于
+// 成品层：分件缓存的键本来就包含 (text, pinyin)，一个词只要文本和拼音没变，
+// PCM 内容就是确定的，不存在「把错误读音固化」的风险）。
+// ---------------------------------------------------------------------------
+
+const PARTS_SUBDIR = "parts";
+
+function partsDir(): string {
+  return path.join(paths.audio, PARTS_SUBDIR);
+}
+
+function partFilePath(key: string): string {
+  return path.join(partsDir(), `${key}.pcm`);
+}
+
+function readPart(key: string): Buffer | null {
+  try {
+    const p = partFilePath(key);
+    return fs.existsSync(p) ? fs.readFileSync(p) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePart(key: string, pcm: Buffer): void {
+  try {
+    fs.mkdirSync(partsDir(), { recursive: true });
+    fs.writeFileSync(partFilePath(key), pcm);
+  } catch {
+    // 落盘失败不影响本次合成结果的使用，只是下次没法复用这块 PCM。
+  }
+}
+
+export interface WordPartKey {
+  text: string;
+  pinyin: string;
+  speaker: string;
+  sampleRate: number;
+  speed: number;
+}
+
+function wordPartCacheKey(key: WordPartKey): string {
+  const raw = ["word", key.text, key.pinyin, key.speaker, String(key.sampleRate), String(key.speed)].join(
+    "|"
+  );
+  return createHash("md5").update(raw, "utf8").digest("hex");
+}
+
+export function getWordPartCache(key: WordPartKey): Buffer | null {
+  return readPart(wordPartCacheKey(key));
+}
+
+export function putWordPartCache(key: WordPartKey, pcm: Buffer): void {
+  writePart(wordPartCacheKey(key), pcm);
+}
+
+export interface LabelPartKey {
+  n: number;
+  speaker: string;
+  sampleRate: number;
+}
+
+function labelPartCacheKey(key: LabelPartKey): string {
+  const raw = ["label", String(key.n), key.speaker, String(key.sampleRate)].join("|");
+  return createHash("md5").update(raw, "utf8").digest("hex");
+}
+
+export function getLabelPartCache(key: LabelPartKey): Buffer | null {
+  return readPart(labelPartCacheKey(key));
+}
+
+export function putLabelPartCache(key: LabelPartKey, pcm: Buffer): void {
+  writePart(labelPartCacheKey(key), pcm);
 }

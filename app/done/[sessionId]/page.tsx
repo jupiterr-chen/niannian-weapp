@@ -26,34 +26,41 @@ export default function DonePage({
   const { sessionId } = use(params);
   const [result, setResult] = useState<FinishResult | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
-  // finishSession（lib/db/queries.ts）不是幂等的：每次调用都会把本次 attempt
-  // 重新计入 mistake 统计（skip_count/hint_sum 会被再加一遍）。React 18/19
-  // 在开发模式的 StrictMode 下会把 effect 故意「挂载→卸载→再挂载」一次，
-  // 用 ref 挡掉这次重复调用，避免统计被平白翻倍——这是本页能做的部分；
-  // 真正的幂等保护（比如已 finished_at 就跳过重算）需要后端配合，见任务报告。
+  // 后端已经把 finishSession 改成幂等的了（PROJECT.md §11 D-18：已有
+  // finished_at 就只读统计、不再重算 mistakes），这里的 ref 纯粹是为了不在
+  // React 开发模式 StrictMode 的「挂载→卸载→再挂载」下发两次完全一样的
+  // fetch——只让请求发一次；但状态更新要看「组件此刻是否还挂载着」
+  // (mountedRef)，不能看「发起这次 fetch 的是哪一次 effect 调用」，否则
+  // StrictMode 的第一次 effect 会被自己的 cleanup 提前标记为「已取消」，
+  // 导致 fetch 成功回来后 setResult 被错误地跳过、页面卡在「正在统计…」——
+  // 这是我在实际联调时踩到的坑，教训是 mountedRef 必须在每次挂载时重置。
   const requestedRef = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (requestedRef.current) return;
-    requestedRef.current = true;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/session/${sessionId}/finish`, { method: "POST" });
-        if (!res.ok) {
-          if (!cancelled) setError("统计结果没拿到，不过听写已经做完啦。");
-          return;
+    mountedRef.current = true;
+
+    if (!requestedRef.current) {
+      requestedRef.current = true;
+      (async () => {
+        try {
+          const res = await fetch(`/api/session/${sessionId}/finish`, { method: "POST" });
+          if (!res.ok) {
+            if (mountedRef.current) setError("统计结果没拿到，不过听写已经做完啦。");
+            return;
+          }
+          const body = (await res.json()) as FinishResult;
+          if (mountedRef.current) setResult(body);
+        } catch {
+          if (mountedRef.current) setError("网络好像断开了，不过听写已经做完啦。");
+        } finally {
+          clearLastSession();
         }
-        const body = (await res.json()) as FinishResult;
-        if (!cancelled) setResult(body);
-      } catch {
-        if (!cancelled) setError("网络好像断开了，不过听写已经做完啦。");
-      } finally {
-        clearLastSession();
-      }
-    })();
+      })();
+    }
+
     return () => {
-      cancelled = true;
+      mountedRef.current = false;
     };
   }, [sessionId]);
 

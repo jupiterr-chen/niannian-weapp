@@ -13,17 +13,11 @@ function num(name: string, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function bool01(name: string, fallback: boolean): boolean {
-  const v = process.env[name];
-  if (v === undefined || v === "") return fallback;
-  return v === "1" || v.toLowerCase() === "true";
-}
-
 const dataDir = path.resolve(process.cwd(), str("DATA_DIR", "./data"));
 
 const arkApiKey = str("ARK_API_KEY", "");
-const volcTtsAppId = str("VOLC_TTS_APP_ID", "");
-const volcTtsAccessToken = str("VOLC_TTS_ACCESS_TOKEN", "");
+const volcTtsApiKey = str("VOLC_TTS_API_KEY", "");
+const volcTtsSpeaker = str("VOLC_TTS_SPEAKER", "");
 
 let vlmProvider = str("VLM_PROVIDER", "ark") as "ark" | "mock";
 if (vlmProvider === "ark" && arkApiKey === "") {
@@ -35,10 +29,10 @@ if (vlmProvider === "ark" && arkApiKey === "") {
 }
 
 let ttsProvider = str("TTS_PROVIDER", "volcano") as "volcano" | "mock";
-if (ttsProvider === "volcano" && (volcTtsAppId === "" || volcTtsAccessToken === "")) {
+if (ttsProvider === "volcano" && (volcTtsApiKey === "" || volcTtsSpeaker === "")) {
   console.warn(
-    "[env] 未检测到 VOLC_TTS_APP_ID 或 VOLC_TTS_ACCESS_TOKEN，语音合成（TTS）自动降级为 mock provider。" +
-      "如需使用火山语音真实合成，请在 .env.local 中配置 VOLC_TTS_APP_ID 与 VOLC_TTS_ACCESS_TOKEN（以及 VOLC_TTS_CLUSTER / VOLC_TTS_VOICE）。"
+    "[env] 未检测到 VOLC_TTS_API_KEY 或 VOLC_TTS_SPEAKER，语音合成（TTS）自动降级为 mock provider。" +
+      "如需使用火山语音真实合成，请在 .env.local 中配置 VOLC_TTS_API_KEY 与 VOLC_TTS_SPEAKER（控制台 > 音色库）。"
   );
   ttsProvider = "mock";
 }
@@ -53,12 +47,19 @@ export const env = {
   arkModel: str("ARK_MODEL", ""),
 
   ttsProvider,
-  volcTtsBaseUrl: str("VOLC_TTS_BASE_URL", "https://openspeech.bytedance.com/api/v1/tts"),
-  volcTtsAppId,
-  volcTtsAccessToken,
-  volcTtsCluster: str("VOLC_TTS_CLUSTER", "volcano_tts"),
-  volcTtsVoice: str("VOLC_TTS_VOICE", ""),
-  volcTtsSsml: bool01("VOLC_TTS_SSML", true),
+  volcTtsBaseUrl: str(
+    "VOLC_TTS_BASE_URL",
+    "https://openspeech.bytedance.com/api/v3/tts/unidirectional"
+  ),
+  volcTtsApiKey,
+  volcTtsResourceId: str("VOLC_TTS_RESOURCE_ID", "seed-tts-2.0"),
+  volcTtsSpeaker,
+  // 别名：app/api/audio/route.ts 与 app/api/session/route.ts（不在本次任务
+  // 可修改范围内）里的 "voice" 概念在新接口里就是 speaker 音色 ID，没有独立
+  // 存在的必要。保留这个同值别名只是为了不用去动 app/ 下的文件；SynthInput
+  // 契约本身的 voice 字段没有变化，volcano.ts 内部合成实际用的是 speaker。
+  volcTtsVoice: volcTtsSpeaker,
+  volcTtsSampleRate: num("VOLC_TTS_SAMPLE_RATE", 24000),
 
   ttsRepeat: num("TTS_REPEAT", 3),
   ttsGapMs: num("TTS_GAP_MS", 1500),

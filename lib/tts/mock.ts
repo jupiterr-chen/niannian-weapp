@@ -2,7 +2,11 @@
 // 正弦提示音模拟「（报序号）+ 词 * repeat，遍间留白 gapMs」的真实节奏，
 // 这样没有任何云端密钥时，也能在浏览器里听出三遍 + 1.5 秒间隔的完整时序，
 // 用来验证前端播放时序、防叠音、预取这些和真实语音内容无关的逻辑。
+//
+// WAV 头封装与静音 PCM 生成复用 lib/tts/wav.ts——volcano.ts 的真实装配走的
+// 是同一份工具，避免两处各写一份 44 字节头。
 import { planSegments, type SynthInput, type SynthOutput, type TtsProvider } from "./index";
+import { encodeWav, silencePcm } from "./wav";
 
 const SAMPLE_RATE = 16000;
 const WORD_TONE_HZ = 880; // 词本身的提示音
@@ -12,9 +16,9 @@ const LABEL_TONE_MS = 200;
 const AMPLITUDE = 0.3 * 32767; // 留足 headroom，避免削波
 const FADE_SEC = 0.005; // 5ms 淡入淡出，避免每段提示音首尾出现爆音
 
-function sineSamples(freqHz: number, durationMs: number): Int16Array {
+function sineSamples(freqHz: number, durationMs: number): Buffer {
   const n = Math.max(1, Math.round((durationMs / 1000) * SAMPLE_RATE));
-  const samples = new Int16Array(n);
+  const buf = Buffer.alloc(n * 2);
   const fadeSamples = Math.min(Math.round(FADE_SEC * SAMPLE_RATE), Math.floor(n / 2));
   for (let i = 0; i < n; i++) {
     let env = 1;
@@ -23,43 +27,10 @@ function sineSamples(freqHz: number, durationMs: number): Int16Array {
       else if (i > n - fadeSamples) env = (n - i) / fadeSamples;
     }
     const t = i / SAMPLE_RATE;
-    samples[i] = Math.round(AMPLITUDE * env * Math.sin(2 * Math.PI * freqHz * t));
+    const sample = Math.round(AMPLITUDE * env * Math.sin(2 * Math.PI * freqHz * t));
+    buf.writeInt16LE(sample, i * 2);
   }
-  return samples;
-}
-
-function silenceSamples(durationMs: number): Int16Array {
-  const n = Math.max(0, Math.round((durationMs / 1000) * SAMPLE_RATE));
-  return new Int16Array(n);
-}
-
-function encodeWav(chunks: Int16Array[]): Buffer {
-  const totalSamples = chunks.reduce((sum, c) => sum + c.length, 0);
-  const dataSize = totalSamples * 2; // 16-bit mono
-  const buffer = Buffer.alloc(44 + dataSize);
-
-  buffer.write("RIFF", 0, "ascii");
-  buffer.writeUInt32LE(36 + dataSize, 4);
-  buffer.write("WAVE", 8, "ascii");
-  buffer.write("fmt ", 12, "ascii");
-  buffer.writeUInt32LE(16, 16); // fmt chunk size (PCM)
-  buffer.writeUInt16LE(1, 20); // audio format = PCM
-  buffer.writeUInt16LE(1, 22); // channels = mono
-  buffer.writeUInt32LE(SAMPLE_RATE, 24);
-  buffer.writeUInt32LE(SAMPLE_RATE * 2, 28); // byte rate = sampleRate * blockAlign
-  buffer.writeUInt16LE(2, 32); // block align = channels * bytesPerSample
-  buffer.writeUInt16LE(16, 34); // bits per sample
-  buffer.write("data", 36, "ascii");
-  buffer.writeUInt32LE(dataSize, 40);
-
-  let offset = 44;
-  for (const chunk of chunks) {
-    for (let i = 0; i < chunk.length; i++) {
-      buffer.writeInt16LE(chunk[i], offset);
-      offset += 2;
-    }
-  }
-  return buffer;
+  return buf;
 }
 
 export class MockTtsProvider implements TtsProvider {
@@ -68,13 +39,14 @@ export class MockTtsProvider implements TtsProvider {
   async synthesize(input: SynthInput): Promise<SynthOutput> {
     const segments = planSegments(input);
     const gapMs = Math.max(0, Math.floor(input.gapMs));
-    const chunks: Int16Array[] = [];
+    const chunks: Buffer[] = [];
     segments.forEach((seg, i) => {
       chunks.push(
         seg.kind === "label" ? sineSamples(LABEL_TONE_HZ, LABEL_TONE_MS) : sineSamples(WORD_TONE_HZ, WORD_TONE_MS)
       );
-      if (i < segments.length - 1) chunks.push(silenceSamples(gapMs));
+      if (i < segments.length - 1) chunks.push(silencePcm(gapMs, SAMPLE_RATE));
     });
-    return { audio: encodeWav(chunks), mime: "audio/wav" };
+    const pcm = Buffer.concat(chunks);
+    return { audio: encodeWav(pcm, { sampleRate: SAMPLE_RATE }), mime: "audio/wav" };
   }
 }

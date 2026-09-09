@@ -6,13 +6,18 @@ import Link from "next/link";
 import { BigButton } from "@/components/BigButton";
 import { WordChip, type ChipWord } from "@/components/WordChip";
 import { CorrectionDialog } from "@/components/CorrectionDialog";
-import { saveLastSession, worksheetStorageKey } from "@/components/clientStorage";
+import { saveLastSession } from "@/components/clientStorage";
 
+// PROJECT.md §11 D-20：duplicateOfRequired 由服务端用 lib/core/normalize.ts
+// 的权威实现算好直接给我们，前端不做任何文本归一化。
+interface RowWordOut extends ChipWord {
+  duplicateOfRequired: boolean;
+}
 interface RowOut {
   char: string;
   pinyin: string;
   rowIndex: number;
-  words: ChipWord[];
+  words: RowWordOut[];
 }
 interface WorksheetPayload {
   worksheetId: number;
@@ -20,14 +25,6 @@ interface WorksheetPayload {
   required: ChipWord[];
   rows: RowOut[];
   warnings: string[];
-}
-
-// 近似 lib/core/normalize.ts 的「剔重」判断，仅用于选词页展示（真正的算法
-// 权威实现在服务端 pickOptional / /api/worksheet/:id/pick，这里只是不想让
-// 家长看到一个和必听词一字不差、选了也会被服务端过滤掉的候选词）。
-// 有意保持在前端文件内、不导入 lib/core，维持前后端目录边界。
-function simpleNormalize(s: string): string {
-  return s.replace(/[\s　、。！-／：-＠［-｀｛-～‘’“”…—【】《》〈〉「」『』（）.,!?;:'"()[\]{}<>_\-~`@#$%^&*+=|/]/gu, "");
 }
 
 export default function SelectPage({
@@ -53,61 +50,50 @@ export default function SelectPage({
   const [correctionSubmitting, setCorrectionSubmitting] = useState(false);
   const [correctionNotice, setCorrectionNotice] = useState<string | null>(null);
 
-  // 从 sessionStorage 读上一步 /upload 存下的识别结果——契约里没有
-  // GET /api/worksheet/:id，见任务报告「契约缺口」。
+  // PROJECT.md §11 D-19：选词页是识别链路唯一的人工闸口，改成直接用
+  // GET /api/worksheet/:id 做单一数据源——不再依赖 sessionStorage，刷新页
+  // 面也能自己从服务端重新拉回完整词表（含现算的 pinyinUncertain /
+  // duplicateOfRequired）。
   useEffect(() => {
-    try {
-      const raw = window.sessionStorage.getItem(worksheetStorageKey(worksheetId));
-      if (!raw) {
-        setData(null);
-        return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/worksheet/${worksheetId}`);
+        if (cancelled) return;
+        if (!res.ok) {
+          setData(null);
+          return;
+        }
+        const body = (await res.json()) as WorksheetPayload;
+        if (!cancelled) setData(body);
+      } catch {
+        if (!cancelled) setData(null);
       }
-      setData(JSON.parse(raw) as WorksheetPayload);
-    } catch {
-      setData(null);
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [worksheetId]);
 
-  // 每行的有效候选（剔除与必听词重复的）+ 被剔除的词，用于展示说明。
-  const rowsWithCandidates = useMemo(() => {
-    if (!data) return [];
-    const requiredTextSet = new Set(data.required.map((w) => simpleNormalize(w.text)));
-    return data.rows.map((row) => {
-      const validWords = row.words.filter((w) => !requiredTextSet.has(simpleNormalize(w.text)));
-      const excluded = row.words.filter((w) => requiredTextSet.has(simpleNormalize(w.text)));
-      return { ...row, validWords, excluded };
-    });
-  }, [data]);
-
-  // 默认每行选中第一个有效候选，家长一进来就能看到「已经帮你选好了」的状态，
-  // 而不是一个空白的、逼着家长必须先操作才能继续的界面。
+  // 默认每行选中第一个非重复候选，家长一进来就能看到「已经帮你选好了」的
+  // 状态，而不是一个逼着家长必须先操作才能继续的空白界面。
   useEffect(() => {
     if (!data) return;
     setSelectedByRow((prev) => {
       const next = { ...prev };
-      for (const row of rowsWithCandidates) {
-        if (next[row.rowIndex] === undefined && row.validWords.length > 0) {
-          next[row.rowIndex] = row.validWords[0].id;
-        }
+      for (const row of data.rows) {
+        if (next[row.rowIndex] !== undefined) continue;
+        const firstEligible = row.words.find((w) => !w.duplicateOfRequired);
+        if (firstEligible) next[row.rowIndex] = firstEligible.id;
       }
       return next;
     });
-    // rowsWithCandidates 由 data 派生，data 变化才需要重新兜底默认值。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
-
-  const wordIdToRow = useMemo(() => {
-    const map = new Map<number, number>();
-    for (const row of rowsWithCandidates) {
-      for (const w of row.validWords) map.set(w.id, row.rowIndex);
-    }
-    return map;
-  }, [rowsWithCandidates]);
 
   const requiredCount = data?.required.length ?? 0;
   const optionalCount = useMemo(
-    () => rowsWithCandidates.filter((row) => selectedByRow[row.rowIndex] !== undefined).length,
-    [rowsWithCandidates, selectedByRow]
+    () => (data ? data.rows.filter((row) => selectedByRow[row.rowIndex] !== undefined).length : 0),
+    [data, selectedByRow]
   );
   const totalCount = requiredCount + optionalCount;
 
@@ -151,13 +137,13 @@ export default function SelectPage({
         setPageError("帮你选词的时候出错了，请再试一次");
         return;
       }
-      const body = (await res.json()) as { optional: { id: number; text: string; pinyin: string }[] };
+      // PROJECT.md §11 D-17：pick 直接带 rowIndex，不用再靠文本/id 反推行归属。
+      const body = (await res.json()) as {
+        optional: { id: number; text: string; pinyin: string; rowIndex: number; char: string }[];
+      };
       setSelectedByRow((prev) => {
         const next = { ...prev };
-        for (const w of body.optional) {
-          const rowIndex = wordIdToRow.get(w.id);
-          if (rowIndex !== undefined) next[rowIndex] = w.id;
-        }
+        for (const w of body.optional) next[w.rowIndex] = w.id;
         return next;
       });
     } catch {
@@ -165,7 +151,7 @@ export default function SelectPage({
     } finally {
       setPicking(false);
     }
-  }, [worksheetId, wordIdToRow]);
+  }, [worksheetId]);
 
   const submitCorrection = useCallback(
     async (value: string) => {
@@ -232,7 +218,7 @@ export default function SelectPage({
   if (data === null) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-[20px]">找不到这份识别结果了，可能是页面被刷新或者太久没操作。</p>
+        <p className="text-[20px]">找不到这份识别结果了，可能是链接不对或者作业记录已经不在了。</p>
         <Link href="/upload" className="w-full max-w-xs">
           <BigButton>重新上传</BigButton>
         </Link>
@@ -289,24 +275,22 @@ export default function SelectPage({
           </button>
         </div>
 
-        {rowsWithCandidates.map((row) => (
-          <div key={row.rowIndex} className="rounded-2xl border-2 border-[var(--color-border)] p-4">
-            <div className="mb-3 flex items-baseline gap-3">
-              <span className="pinyin text-[14px] text-[var(--color-fg-muted)]">{row.pinyin}</span>
-              <span className="text-[22px] font-bold">{row.char}</span>
-              <span className="text-[15px] text-[var(--color-fg-muted)]">第 {row.rowIndex + 1} 行</span>
-            </div>
-            {row.validWords.length === 0 ? (
-              <p className="text-[16px] text-[var(--color-fg-muted)]">
-                这一行的组词都已经在必听词里了，不用另外选。
-              </p>
-            ) : (
+        {data.rows.map((row) => {
+          const hasEligible = row.words.some((w) => !w.duplicateOfRequired);
+          return (
+            <div key={row.rowIndex} className="rounded-2xl border-2 border-[var(--color-border)] p-4">
+              <div className="mb-3 flex items-baseline gap-3">
+                <span className="pinyin text-[14px] text-[var(--color-fg-muted)]">{row.pinyin}</span>
+                <span className="text-[22px] font-bold">{row.char}</span>
+                <span className="text-[15px] text-[var(--color-fg-muted)]">第 {row.rowIndex + 1} 行</span>
+              </div>
               <div className="flex flex-wrap gap-4">
-                {row.validWords.map((w) => (
+                {row.words.map((w) => (
                   <WordChip
                     key={w.id}
                     word={w}
                     mode="selectable"
+                    duplicate={w.duplicateOfRequired}
                     selected={selectedByRow[row.rowIndex] === w.id}
                     onSelect={() => setSelectedByRow((prev) => ({ ...prev, [row.rowIndex]: w.id }))}
                     onPreview={() => playPreview(w.id)}
@@ -316,14 +300,14 @@ export default function SelectPage({
                   />
                 ))}
               </div>
-            )}
-            {row.excluded.length > 0 && (
-              <p className="mt-2 text-[14px] text-[var(--color-fg-muted)]">
-                已排除（与必听词重复）：{row.excluded.map((w) => w.text).join("、")}
-              </p>
-            )}
-          </div>
-        ))}
+              {!hasEligible && (
+                <p className="mt-2 text-[16px] text-[var(--color-fg-muted)]">
+                  这一行的组词都已经在必听词里了，不用另外选。
+                </p>
+              )}
+            </div>
+          );
+        })}
       </section>
 
       <div className="fixed inset-x-0 bottom-0 border-t-2 border-[var(--color-border)] bg-[var(--color-bg)] p-4">

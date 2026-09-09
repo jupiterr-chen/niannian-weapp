@@ -375,6 +375,45 @@ TTS_SPEED=1.0
 
 ---
 
+## 10.5 火山 TTS 真实接口规格（2026-09 官方文档核实，**覆盖 §5.2 全部内容**）
+
+§5.2 写的是**上一代接口**（现已归入官方「历史文档」），全部作废。以下为核实过的现行规格。
+
+```
+POST https://openspeech.bytedance.com/api/v3/tts/unidirectional
+Headers:
+  X-Api-Key:         <API Key>          必选，控制台 > API Key 管理
+  X-Api-Resource-Id: seed-tts-2.0       必选，豆包语音合成大模型 2.0
+  X-Api-Request-Id:  <uuid>             必选
+  Content-Type:      application/json
+Body:
+{
+  "req_params": {
+    "text": "长大",
+    "speaker": "zh_female_vv_uranus_bigtts",     // 控制台 > 音色库
+    "audio_params": { "format": "pcm", "sample_rate": 24000 },
+    "additions": "{\"pronunciation_dict\":{\"tone\":[\"长大/(zhang3)(da4)\"]}}"
+  }
+}
+```
+
+**响应是 HTTP Chunked 流**：多个 JSON 对象依次返回，每个含 `code`(0 为成功) / `message` / `data`(base64 音频分片)。必须把所有分片的 `data` 解码后按序拼接才是完整音频。注意成功码是 **0**，不是旧版的 3000。
+
+**发音词典（多音字的正解）**：`additions` 是一个 **JSON 序列化后的字符串**，内含 `pronunciation_dict.tone` 数组。
+- 格式 `原词/(音节)(音节)`，数字声调，如 `长大/(zhang3)(da4)`
+- 上限 5000 条；每个原词 ≤ 9 字符，不含空格、不重复；服务端按从左到右贪心最长匹配
+- 仅豆包 2.0 中英文音色支持
+- **命中词典的片段不支持 SSML，二者只能择一** —— 本项目选发音词典，**SSML 路径整个废弃**
+
+## 10.6 音频装配（因废弃 SSML 而必须自建）
+
+没有 SSML 就没有 `<break>`，所以「三遍 + 间隔」由服务端自行拼装，这也带来更好的缓存特性：
+
+- **词**只合成一次，**「第 N 个」**也只合成一次（序号是有限集合，全项目永久复用）
+- 请求 `format: "pcm"`，按 `[第N个][静音][词][静音][词][静音][词]` 拼接 PCM，再套 WAV 头输出
+- 改遍数、改间隔**不需要重新合成**，只是重新拼装
+- 分件缓存（词级 PCM）与成品缓存（最终 WAV）分开；D-11「降级音频不入缓存」只作用于成品层
+
 ## 11. 架构决议记录
 
 子代理提出的契约疑点由架构负责人在此裁决。**以本节为准，覆盖前文中相冲突的表述。**
@@ -387,6 +426,8 @@ TTS_SPEED=1.0
 | D-4 | `finishSession` 的 `hintCount` 含义 | 定义为**用过提示的词数**（`hint_level > 0` 的 attempt 条数），不是 hint_level 总和。前端文案相应写作「有 K 个词用过提示」。 |
 | D-5 | `weight()` 以 wordId 为键 | 保持。`pickOptional` 只在词落库之后调用，id 必然存在；无 id 时退化为权重 1 是可接受的降级。 |
 | D-6 | `.gitignore` 的 `.env*` 会忽略 `.env.example` | 已加 `!.env.example` 例外。 |
+| D-21 | `PATCH /api/worksheet/:id` 的返回值 | 从 `{ ok: true }` 改为与 POST/GET 一致的**全量信封**，覆盖 §7 表格。家长改完拼音后应当立刻拿回重算过的 `pinyinUncertain` 与 `duplicateOfRequired`，返回空壳等于逼前端再发一次 GET。 |
+| D-22 | `GET` 的 `pinyinUncertain` 现算而非回放 | 用当前库里的 `(text, pinyin)` 现算，而不是恢复「当初 VLM 判定时」的标记。家长关心的是「现在这个读音可不可疑」，不是历史快照。 |
 | D-18 | `finishSession` 必须幂等 | 现在每调用一次就重跑一遍 `applyAttemptToMistakes`，把 `skip_count`/`hint_sum` 反复累加——**这是数据污染，且会直接扭曲选词权重**。改法：`finished_at` 已有值时，只读出统计返回，不再重算 mistakes。前端刷新 `/done` 页、误触、重试都会触发这条路径，不能靠前端自律。 |
 | D-19 | 补 `GET /api/worksheet/:id` | 选词页现在靠 `sessionStorage` 传数据，**家长一刷新就全没了**，只能退回重新上传。这是识别链路唯一的人工闸口，不能这么脆。补一个只读接口，返回与 `POST /api/worksheet` 相同的结构。 |
 | D-20 | 重复词标记由服务端给出 | 前端为了把「已在必听里」的行内词置灰，自己近似重实现了一份 `normalize()`，与权威实现有分叉风险。改为服务端在 `rows[].words[]` 上直接给 `duplicateOfRequired: boolean`，用 `lib/core/normalize.ts` 的权威实现算。前端不做任何文本归一化。 |
