@@ -66,3 +66,53 @@ export function suggestHomophone(text: string, targetPinyin: string): string {
   }
   return chars.join("");
 }
+
+// D-13：pinyin-pro 对一些不太常见的「X子/X头/X们…」组合给不出中性调（如
+// 「胆子」标成 dǎn zǐ 而不是词典意义上的轻声 dǎn zi），导致 crossCheckPinyin
+// 对着完全正确的模型结果报「拼音存疑」。这类假阳性喊多了，家长会学会无视
+// 黄色标记，整条防线就作废了。
+//
+// 修法不是放宽全局比较（那样会漏掉真正的多音字错误，比如「长大」的
+// zhǎng/cháng之争必须严格保留），而是只在轻声高发的字位上放宽：
+// 这些字位只比不带声调的基础音节，其它位置仍然要求声调完全一致。
+//
+// 只有 Unicode 组合重音符号（宏音、锐音、抑扬、钝音，对应一二三四声）被剥
+// 离；ü 的分音符（U+0308）不在剥离范围内，所以 lǜ/lù 之类会保留区别，不会
+// 被误判为「基础音节相同」。
+const NEUTRAL_TONE_CANDIDATE_CHARS = new Set([
+  "子", "头", "们", "么", "的", "了", "着", "过", "吧", "呢", "吗", "儿",
+]);
+
+// macron(1声) U+0304 / acute(2声) U+0301 / caron(3声) U+030C / grave(4声) U+0300
+// 字符类里直接放四个 Unicode 组合重音符号本身（非转义写法），已用逐字符 codePointAt 校验过确实是 U+0304/0301/030C/0300 这四个，互不重复。
+const TONE_DIACRITICS = /[̄́̌̀]/g;
+
+function stripToneMark(syllable: string): string {
+  return syllable.normalize("NFD").replace(TONE_DIACRITICS, "").normalize("NFC");
+}
+
+// 按字对齐比较两个拼音串是否代表同一个读音：text 里落在轻声候选字集合里的
+// 位置，只比较去掉声调后的基础音节（dǎn zǐ 的 "zǐ" 和 dǎn zi 的 "zi" 都会
+// 先变成 "zi" 再比较）；其余位置仍然要求声调完全一致。text 的字数和两个拼音
+// 串的音节数对不齐时（数据本身有问题），没法可靠地按位对应，退化成和
+// comparePinyin 一样的整串严格比较。
+export function comparePinyinLoose(text: string, a: string, b: string): boolean {
+  const chars = Array.from(text);
+  const syllablesA = normalizeForCompare(a).split(" ").filter(Boolean);
+  const syllablesB = normalizeForCompare(b).split(" ").filter(Boolean);
+
+  if (chars.length === 0 || syllablesA.length !== chars.length || syllablesB.length !== chars.length) {
+    return comparePinyin(a, b);
+  }
+
+  for (let i = 0; i < chars.length; i++) {
+    const syllableA = syllablesA[i];
+    const syllableB = syllablesB[i];
+    if (NEUTRAL_TONE_CANDIDATE_CHARS.has(chars[i])) {
+      if (stripToneMark(syllableA) !== stripToneMark(syllableB)) return false;
+    } else if (syllableA !== syllableB) {
+      return false;
+    }
+  }
+  return true;
+}

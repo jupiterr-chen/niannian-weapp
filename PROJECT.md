@@ -387,6 +387,10 @@ TTS_SPEED=1.0
 | D-4 | `finishSession` 的 `hintCount` 含义 | 定义为**用过提示的词数**（`hint_level > 0` 的 attempt 条数），不是 hint_level 总和。前端文案相应写作「有 K 个词用过提示」。 |
 | D-5 | `weight()` 以 wordId 为键 | 保持。`pickOptional` 只在词落库之后调用，id 必然存在；无 id 时退化为权重 1 是可接受的降级。 |
 | D-6 | `.gitignore` 的 `.env*` 会忽略 `.env.example` | 已加 `!.env.example` 例外。 |
+| D-10 | `putCache` 的 meta 参数 | **改为必填**：`putCache(key, audio, mime, meta: { ttsText, pinyin })`。可选参数一定会被忘记，而忘记的后果是读音修正后旧音频清不掉——让类型系统强制它。 |
+| D-11 | 降级音频绝不进持久缓存 | `SynthOutput` 增加 `degraded?: boolean`。SSML 回落纯文本时置 `true`；`putCache` 遇到 `degraded` 直接拒绝写盘；`GET /api/audio` 对降级结果设响应头 `X-TTS-Degraded: 1`，前端据此显示「读音可能不准」。**理由**：降级音频一旦落盘就永久固化，一个读错的多音字会天天错下去，且无声无息，直接违背 G2。 |
+| D-12 | SSML 回落的触发条件收窄 | 只在**业务错误**（HTTP 200 但 `code ≠ 3000`）时回落纯文本。网络/超时错误已经被 `postWithRetry` 重试过，再用纯文本重试一遍只是徒增延迟，还可能在网络恢复的瞬间悄悄返回一个未经注音的读音。网络类错误直接向上抛。 |
+| D-13 | 轻声的假阳性必须消除 | `pinyin-pro` 对「胆子」给出 `dǎn zǐ` 而黄金真值是 `dǎn zi`，导致 14 个必听词里有 2 个被恒定误标存疑。**狼来了喊多了，家长就会无视黄色标记，整条防线作废。** 修法：比对时对轻声候选字（子头们么的了着过吧呢吗儿）按位只比无声调的基础音节。 |
 | D-8 | TTS 返回类型 | 改为 `Promise<{ audio: Buffer; mime: string }>`，覆盖 §5.2 的 `Promise<Buffer>`。原因：mock provider 生成 WAV 比伪造合法 MP3 可靠得多，API 路由据 `mime` 设置 Content-Type。 |
 | D-9 | mock TTS 的音频内容 | 不要静音。按 `repeat` 和 `gapMs` 生成 N 声短提示音（正弦波），使「三遍 + 1.5 秒间隔」的节奏在**没有任何云端密钥**的情况下就能真实听到并验证。 |
 | D-7 | 「结果」的读音 | fixture 取通用读音 `jié guǒ`。本课语境下植物「结果」应为 `jiē guǒ`，但两种读音写出来是同样的字，不影响听写；真要改由家长在选词页用「读音不对」修正（§5.3 第 3 条）。 |
