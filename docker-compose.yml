@@ -1,0 +1,28 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # bind mount 而不是 named volume：备份就是拷贝一个目录（cp -r ./data
+      # /some/backup/），家长/维护者能直接在文件管理器里看到、拷走这些文件；
+      # named volume 藏在 Docker 内部（/var/lib/docker/volumes/...），对家庭
+      # NAS 场景是不必要的负担。相对路径写法（./data）跨平台可用，Windows
+      # 本机和 Debian 目标机都能直接 docker compose up。
+      - ./data:/data
+    env_file:
+      # 真实密钥（ARK_API_KEY / VOLC_TTS_API_KEY 等）只在这里注入到运行时
+      # 容器环境变量，不会进镜像层。部署到目标机前，先在
+      # <deploy-dir>/<项目目录>/ 下按 .env.docker.example 的说明建好这个
+      # 文件。
+      - .env.local
+    environment:
+      # 覆盖 .env.local 里给本机 `next dev` 用的开发期取值：compose 的
+      # environment 优先级高于 env_file，这里显式钉死容器内必须用的值，
+      # 不依赖 .env.local 里凑巧写对。
+      - DATA_DIR=/data
+      - PORT=3000
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    # 镜像里已经用 HEALTHCHECK 指令定义过检测逻辑（Dockerfile），这里不重复
+    # 定义，`docker compose ps` / `docker inspect` 能直接看到 healthy 状态。

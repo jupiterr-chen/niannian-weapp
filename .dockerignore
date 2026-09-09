@@ -1,0 +1,43 @@
+# 真实密钥所在文件，绝对不能进任何镜像层
+.env
+.env.local
+.env*.local
+
+# 运行时数据（数据库、图片、音频），由 bind mount 在运行时挂载，不进镜像
+data/
+
+# 构建产物 / 依赖，容器内会重新生成
+.next/
+node_modules/
+out/
+build/
+
+# 版本控制与编辑器
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# 黄金样本图片，只在本机跑 scripts/api-smoke.ts 时使用，容器不需要
+fixtures/
+
+# 注意：tests/ 不能整体排除——lib/vlm/mock.ts 在生产代码路径里直接 import
+# 了 tests/fixtures/worksheet-01.ts 作为 mock provider 的黄金真值数据源，
+# 排除它会导致 `next build` 直接报 Module not found（构建时已实测踩坑）。
+# 只排除测试覆盖率产物。
+coverage/
+
+# 日志与临时文件
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# 文档（不影响构建，纯粹减小 build context）
+README.md
+PROJECT.md
+AGENTS.md
+CLAUDE.md
