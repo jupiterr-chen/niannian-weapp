@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS worksheet_word (
   word_id      INTEGER NOT NULL REFERENCES word(id),
   bucket       TEXT NOT NULL,         -- 'required' | 'optional'
   row_char     TEXT,                  -- 所属生字，required 的为 NULL
+  row_pinyin   TEXT,                  -- 该生字的拼音（生字本身可能是多音字，必须持久化，不要现算）
   row_index    INTEGER,               -- 生字行序号，从 0 开始；required 的为 NULL
   ord          INTEGER NOT NULL,      -- 行内原始顺序 / required 内原始顺序
   PRIMARY KEY (worksheet_id, word_id)
@@ -371,3 +372,19 @@ TTS_SPEED=1.0
 - 不要擅自扩大范围。发现契约缺陷 → 在报告里指出，不要自作主张改设计
 - **只修改任务里明确划给你的文件**，不要碰别人的文件
 - 报告里必须写：做了什么、哪些没做、哪些地方你不确定、怎么验证
+
+---
+
+## 11. 架构决议记录
+
+子代理提出的契约疑点由架构负责人在此裁决。**以本节为准，覆盖前文中相冲突的表述。**
+
+| # | 议题 | 决议 |
+|---|---|---|
+| D-1 | `pinyin-pro` 的「一/不」变调 | **关闭 `toneSandhi`**。课本给生字标的是本调，`一本正经` 取 `yī běn zhèng jīng`。 |
+| D-2 | 生字本身的拼音无处存放 | **已加 `worksheet_word.row_pinyin` 列**（见 §3）。生字可能是多音字，必须持久化 VLM 的判定，禁止用 `toPinyin(row_char)` 现算。 |
+| D-3 | 答错时 `graduated` 是否重置 | **重置**。任何一次跳过或使用提示，同时把 `streak_ok` 和 `graduated` 都清 0。否则毕业过的词永远回不到池子里，与 §4.4 减 3 分的设计意图冲突。 |
+| D-4 | `finishSession` 的 `hintCount` 含义 | 定义为**用过提示的词数**（`hint_level > 0` 的 attempt 条数），不是 hint_level 总和。前端文案相应写作「有 K 个词用过提示」。 |
+| D-5 | `weight()` 以 wordId 为键 | 保持。`pickOptional` 只在词落库之后调用，id 必然存在；无 id 时退化为权重 1 是可接受的降级。 |
+| D-6 | `.gitignore` 的 `.env*` 会忽略 `.env.example` | 已加 `!.env.example` 例外。 |
+| D-7 | 「结果」的读音 | fixture 取通用读音 `jié guǒ`。本课语境下植物「结果」应为 `jiē guǒ`，但两种读音写出来是同样的字，不影响听写；真要改由家长在选词页用「读音不对」修正（§5.3 第 3 条）。 |
