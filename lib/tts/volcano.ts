@@ -113,36 +113,43 @@ function escapeXml(s: string): string {
 }
 
 // 把一个词逐字包上 <phoneme>，按 pinyin 里对应位置的音节强制注音。text 与
-// pinyin 的字数/音节数对不上时（模型或调用方给的数据有问题），没法可靠地
-// 一一对应，退化成不带注音的纯文本片段，而不是猜一个可能错位的映射。
+// pinyin 的字数/音节数对不上时（模型或调用方给的数据有问题——比如儿化词
+// 「一会儿」3 个汉字只有 2 个音节，天然对不齐；VLM 返回的拼音音节数出错时
+// 也会命中），没法可靠地一一对应，退化成不带注音的纯文本片段，而不是猜一
+// 个可能错位的映射，并用 `annotated: false` 如实报告"这次没有真的注上音"。
 //
-// 已知缺口（D-11 讨论范围之外，留给后续复审）：这种字数不对齐的退化发生在
-// SSML 请求内部，请求本身仍然按 text_type: "ssml" 发出、火山仍可能返回
-// code === 3000 成功——此时 synthesize() 不会把结果标记为 degraded，尽管这
-// 个词实际上并没有被强制注音。目前只有「SSML 被业务拒绝后整体回落纯文本」
-// 这一条路径会置 degraded。
-function buildPhonemeSpan(text: string, pinyinStr: string): string {
+// 这个返回值很关键：走了 fallback 分支的请求依然是合法的 SSML，火山依然会
+// 返回 code === 3000 成功，从 HTTP 层面看和真正注音成功没有任何区别。调用方
+// （doSynthesize）必须靠这个字段才知道要不要把结果标记为 degraded——不然一
+// 段没被强制注音的音频会在无声无息中被 putCache 永久落盘（这正是 D-11 要防
+// 的同一类失败，而且比 D-11 那条更隐蔽：SSML 被业务拒绝时至少还有
+// console.warn，这条字数不对齐的静默退化原来完全不吭声）。
+export function buildPhonemeSpan(text: string, pinyinStr: string): { span: string; annotated: boolean } {
   const chars = Array.from(text);
   const syllables = pinyinStr.trim().split(/\s+/).filter(Boolean);
   if (chars.length === 0 || chars.length !== syllables.length) {
-    return escapeXml(text);
+    return { span: escapeXml(text), annotated: false };
   }
-  return chars
+  const span = chars
     .map(
       (ch, i) =>
         `<phoneme alphabet="py" ph="${toneMarkToNumber(syllables[i])}">${escapeXml(ch)}</phoneme>`
     )
     .join("");
+  return { span, annotated: true };
 }
 
-function buildSsmlText(input: SynthInput): string {
+// label 段（「第 N 个」报序号）从来不注音——序号读错无所谓，不影响听写正确
+// 性，所以它不参与 annotated 的判定。只有词本身（word 段）有没有被真正注音
+// 才决定这次 SSML 合成算不算「降级」。
+function buildSsmlText(input: SynthInput): { ssml: string; annotated: boolean } {
   const segments = planSegments(input);
-  const wordSpan = buildPhonemeSpan(input.text, input.pinyin);
+  const { span: wordSpan, annotated } = buildPhonemeSpan(input.text, input.pinyin);
   const gapMs = Math.max(0, Math.floor(input.gapMs));
   const pieces = segments.map((seg) =>
     seg.kind === "label" ? escapeXml(`第${input.seqLabel}个`) : wordSpan
   );
-  return `<speak>${pieces.join(`<break time="${gapMs}ms"/>`)}</speak>`;
+  return { ssml: `<speak>${pieces.join(`<break time="${gapMs}ms"/>`)}</speak>`, annotated };
 }
 
 function buildPayload(input: SynthInput, text: string, textType: "ssml" | "plain") {
@@ -195,7 +202,21 @@ export class VolcanoTtsProvider implements TtsProvider {
   }
 
   private async doSynthesize(input: SynthInput, textType: "ssml" | "plain"): Promise<SynthOutput> {
-    const text = textType === "ssml" ? buildSsmlText(input) : buildPlainText(input);
+    // SSML 模式下 wordAnnotated === false 意味着 buildPhonemeSpan 因为字数/
+    // 音节数对不齐而退化成了没有 <phoneme> 的纯文本片段——请求依然是合法
+    // SSML，火山依然可能返回 code === 3000，从 HTTP 层面完全看不出区别，
+    // 必须靠这个标志把它标记为 degraded，否则一段没被强制注音的音频会被
+    // 当成正常结果永久写进缓存。
+    let text: string;
+    let wordAnnotated = true;
+    if (textType === "ssml") {
+      const built = buildSsmlText(input);
+      text = built.ssml;
+      wordAnnotated = built.annotated;
+    } else {
+      text = buildPlainText(input);
+    }
+
     const payload = buildPayload(input, text, textType);
     const headers: Record<string, string> = {
       // 火山特有写法：分号而非空格。
@@ -212,6 +233,17 @@ export class VolcanoTtsProvider implements TtsProvider {
     if (!json.data) {
       throw new VolcanoBusinessError(json.code, "火山 TTS 返回成功但 data 字段为空");
     }
-    return { audio: Buffer.from(json.data, "base64"), mime: "audio/mpeg" };
+
+    const output: SynthOutput = { audio: Buffer.from(json.data, "base64"), mime: "audio/mpeg" };
+    if (textType === "ssml" && !wordAnnotated) {
+      const charCount = Array.from(input.text).length;
+      const syllableCount = input.pinyin.trim().split(/\s+/).filter(Boolean).length;
+      console.warn(
+        `[tts:volcano] SSML 注音失败：词「${input.text}」的汉字数（${charCount}）与拼音音节数` +
+          `（${syllableCount}）对不上，本次请求实际发出的是未注音的纯文本，读音可能不准。`
+      );
+      output.degraded = true;
+    }
+    return output;
   }
 }
