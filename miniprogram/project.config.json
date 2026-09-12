@@ -1,6 +1,6 @@
 {
   "compileType": "miniprogram",
-  "appid": "touristappid",
+  "appid": "wx8e89e64adde25d9a",
   "projectname": "niannian-weapp",
   "setting": {
     "urlCheck": false,
@@ -16,7 +16,22 @@
       "ignore": [],
       "disablePlugins": [],
       "outputPath": ""
-    }
+    },
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false
   },
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

@@ -1,127 +1,150 @@
 /**
- * 设计令牌与共享样式，翻译自 Web 版 globals.css。
- * Web 版用 clamp(下限, 视口相对值, 上限)，而 D-27 的结论是：手机竖屏上
- * clamp 恒取下限值——小程序只跑在手机上，所以这里直接用下限值本身，
- * 这就是手机上的真实观感，不是「兜底最小值」。
- * §9 硬指标：正文 ≥22px、听写页序号 ≥72px、主操作 ≥88px、对比度 ≥4.5:1。
+ * 设计系统 v2 —— 儿童教育风（2026-09-12 重设计）。
+ * 暖米色底 + 糖果色卡片 + 立体按钮（下缘深色边，按压下沉），字号沿用
+ * Web 版 §9 硬指标的手机端真实值（正文 22px、主操作 88px、序号 72px）。
+ * 语义色成对出现：主色 + edge（立体按钮的下缘色）。
  */
 page {
-  --bg: #ffffff;
-  --bg-elevated: #ffffff;
-  --fg: #14171a;
-  --fg-muted: #44494e;
-  --border: #d7dbe0;
-  --primary: #1d4ed8;
-  --primary-fg: #ffffff;
-  --success: #15803d;
-  --success-bg: #ecfdf3;
-  --success-fg: #ffffff;
-  --warning: #a16207;
-  --warning-bg: #fef9c3;
-  --warning-border: #eab308;
-  --danger: #b91c1c;
-  --danger-bg: #fef2f2;
-  --locked-bg: #ecfdf3;
-  --locked-fg: #15803d;
-  --locked-border: #86efac;
-  --chip-bg: #eef0f3;
-  --chip-fg: #33383d;
+  --bg: #FFF6EA;
+  --card: #ffffff;
+  --ink: #3A342C;
+  --muted: #9A8F7E;
+  --line: #F0E4D2;
+
+  --orange: #FF8A3D;
+  --orange-edge: #E0661B;
+  --orange-soft: #FFEEDC;
+
+  --green: #3EBD7A;
+  --green-edge: #1F9A5C;
+  --green-soft: #E3F8EC;
+
+  --blue: #4D9FFF;
+  --blue-edge: #2F7FE0;
+  --blue-soft: #E8F2FF;
+
+  --yellow: #FFC53D;
+  --yellow-edge: #E0A41F;
+  --yellow-soft: #FFF4D6;
+
+  --red: #F0564C;
+  --red-soft: #FFE9E4;
 
   background: var(--bg);
-  color: var(--fg);
-  font-size: 22px; /* --fs-body 手机端真实值 */
+  color: var(--ink);
+  font-size: 22px;
   line-height: 1.6;
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   height: 100%;
 }
 
-/* 拼音：等宽字体、比汉字小一号，永远叠在汉字正上方，不折叠。 */
+/* 拼音：等宽字体、永不换行，太长省略号（省略比断行体面） */
 .pinyin {
   font-family: Menlo, Consolas, monospace;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-/* 汉字+拼音竖排小组（PinyinWord 的等价物）。 */
+/* 汉字+拼音竖排小组（PinyinWord 等价物） */
 .pw {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4rpx;
+  min-width: 0;
 }
 .pw-py {
-  font-size: 15px;
-  color: var(--fg-muted);
+  font-size: 13px;
   line-height: 1.2;
 }
 .pw-tx {
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.3;
 }
 .pw-sm .pw-tx {
   font-size: 22px;
 }
+.pw-on-soft .pw-py {
+  color: var(--muted);
+}
 
-/* 主按钮（听写页「再读一遍」、各页主 CTA）：高 ≥88px，字 24px。 */
-.btn-primary {
-  min-height: 88px;
-  font-size: 24px;
-  font-weight: 700;
+/* 白色圆角卡片 */
+.card {
+  background: var(--card);
   border-radius: 24px;
-  background: var(--primary);
-  color: var(--primary-fg);
+  box-shadow: 0 4px 0 rgba(60, 45, 20, 0.06);
+}
+
+/* 立体按钮：下缘用同色深边（box-shadow 0 6px 0 edge），按压下沉 */
+.btn-pop {
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 700;
+  color: #ffffff;
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
 }
-.btn-primary[disabled] {
-  opacity: 0.5;
+.btn-pop-press {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2) !important;
+}
+.btn-pop[disabled] {
+  opacity: 0.55;
 }
 
-/* 次级按钮（「不会，跳过」等）：同样 ≥88px 可点区，字 20px。 */
+/* 主操作（≥88px、字 24px） */
+.btn-primary {
+  min-height: 88px;
+  font-size: 24px;
+  background: var(--orange);
+  box-shadow: 0 6px 0 var(--orange-edge);
+}
+/* 次操作（≥88px、字 20px） */
 .btn-secondary {
   min-height: 88px;
   font-size: 20px;
   font-weight: 600;
-  border-radius: 24px;
-  border: 2px solid var(--border);
-  background: var(--bg);
-  color: var(--fg);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 5px 0 rgba(60, 45, 20, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+.btn-secondary-press {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 rgba(60, 45, 20, 0.12) !important;
 }
 .btn-secondary[disabled] {
-  opacity: 0.5;
+  opacity: 0.55;
 }
 .btn-success {
-  background: var(--success);
-  border: 2px solid var(--success);
-  color: var(--success-fg);
+  background: var(--green);
+  box-shadow: 0 5px 0 var(--green-edge);
+  color: #ffffff;
+}
+.btn-blue {
+  background: var(--blue);
+  box-shadow: 0 5px 0 var(--blue-edge);
 }
 
-/* 幽灵按钮（首页「历史记录」）。 */
-.btn-ghost {
-  min-height: 88px;
-  font-size: 20px;
-  font-weight: 600;
-  border-radius: 24px;
-  border: 2px solid var(--border);
-  background: transparent;
-  color: var(--fg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 首页英雄按钮：高 160px、字 26px。 */
+/* 首页英雄按钮：高 150px、字 28px，橙色糖果感 */
 .btn-hero {
-  min-height: 160px;
-  font-size: 26px;
-  border-radius: 32px;
+  min-height: 150px;
+  font-size: 28px;
+  background: var(--orange);
+  box-shadow: 0 8px 0 var(--orange-edge);
+  border-radius: 28px;
 }
 
-/* 页面主容器：统一留白与最大宽度。 */
+/* 页面容器 */
 .page {
   min-height: 100vh;
   box-sizing: border-box;
@@ -131,42 +154,36 @@ page {
   gap: 32rpx;
 }
 .page-title {
-  font-size: 28px; /* --fs-page-title */
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
 }
 .heading {
-  font-size: 24px; /* --fs-heading */
-  font-weight: 700;
-}
-.summary {
-  font-size: 24px; /* --fs-summary */
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 800;
 }
 .muted {
-  color: var(--fg-muted);
+  color: var(--muted);
 }
 
-/* 错误/成功提示条。 */
+/* 提示条 */
 .notice-danger {
-  border: 2px solid var(--danger);
-  background: var(--danger-bg);
-  color: var(--danger);
+  background: var(--red-soft);
+  color: var(--red);
   border-radius: 16px;
   padding: 24rpx;
   font-size: 22px;
 }
 .notice-success {
-  border: 2px solid var(--success);
-  background: var(--success-bg);
-  color: var(--success);
+  background: var(--green-soft);
+  color: var(--green-edge);
   border-radius: 16px;
   padding: 24rpx;
   font-size: 22px;
 }
 
-/* 选词页词语卡片栅格：手机竖屏固定 2 列（D-28）。 */
+/* 词语卡片栅格：手机 3 列（v2 调整：卡片紧凑化后 3 列可读性达标） */
 .chip-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24rpx;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20rpx;
 }

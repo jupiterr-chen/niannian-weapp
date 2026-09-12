@@ -1,5 +1,5 @@
 .select-page {
-  padding-bottom: 200rpx; /* 给固定底栏留空间 */
+  padding-bottom: 220rpx; /* 给固定底栏留空间 */
 }
 .state-block {
   flex: 1;
@@ -14,150 +14,234 @@
 .state-btn {
   width: 80%;
 }
+
+/* 汇总条：糖果色圆点 + 数字，永不换行 */
 .summary-bar {
-  border: 2px solid var(--border);
-  border-radius: 16px;
-  background: var(--bg-elevated);
-  padding: 24rpx;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  background: var(--card);
+  border-radius: 9999px;
+  padding: 20rpx 32rpx;
+  box-shadow: 0 4px 0 rgba(60, 45, 20, 0.06);
+  white-space: nowrap;
 }
+.dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+}
+.dot-green {
+  background: var(--green);
+}
+.dot-orange {
+  background: var(--orange);
+  margin-left: 16rpx;
+}
+.summary-text {
+  font-size: 22px;
+  font-weight: 700;
+}
+.summary-eq {
+  font-size: 22px;
+  font-weight: 800;
+  margin-left: 12rpx;
+}
+
 .section {
   display: flex;
   flex-direction: column;
   gap: 24rpx;
 }
-.rows-head {
+.section-head {
   display: flex;
-  flex-direction: column;
-  gap: 20rpx;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
 }
-.pick-btn {
-  align-self: flex-start;
-  min-height: 88px;
-  padding: 0 48rpx;
-  border-radius: 16px;
-  background: var(--primary);
-  color: var(--primary-fg);
-  font-size: 20px;
+.section-tag {
+  font-size: 14px;
   font-weight: 600;
+  border-radius: 9999px;
+  padding: 4rpx 20rpx;
+}
+.tag-green {
+  background: var(--green-soft);
+  color: var(--green-edge);
+}
+
+/* 「帮我选」黄色糖果按钮 */
+.pick-btn {
+  min-height: 68px;
+  padding: 0 36rpx;
+  border-radius: 18px;
+  background: var(--yellow);
+  box-shadow: 0 5px 0 var(--yellow-edge);
+  color: #6B4A00;
+  font-size: 20px;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1.2;
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+.pick-press {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--yellow-edge);
 }
 .pick-btn[disabled] {
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 /* 生字行卡片 */
 .row-card {
-  border: 2px solid var(--border);
-  border-radius: 16px;
-  padding: 24rpx;
+  padding: 28rpx 24rpx;
   display: flex;
   flex-direction: column;
   gap: 24rpx;
 }
 .row-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 24rpx;
 }
-.row-pinyin {
-  font-size: 15px;
-  color: var(--fg-muted);
-}
 .row-char {
-  font-size: 28px;
-  font-weight: 700;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: var(--blue-soft);
+  color: var(--blue-edge);
+  font-size: 34px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.row-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+  min-width: 0;
+}
+.row-pinyin {
+  font-size: 14px;
+  color: var(--muted);
 }
 .row-index {
-  font-size: 15px;
-  color: var(--fg-muted);
+  font-size: 14px;
+  color: var(--muted);
 }
 .row-note {
-  font-size: 22px;
-  color: var(--fg-muted);
+  font-size: 20px;
+  color: var(--muted);
 }
 
-/* 词语卡片（必听/候选共用） */
-.chip-card {
+/* 词语卡片：紧凑竖排（拼音/汉字/图标行），3 列 */
+.wcard {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
-  border-radius: 16px;
+  align-items: stretch;
+  gap: 10rpx;
+  border-radius: 18px;
+  padding: 14rpx 10rpx 12rpx;
+  background: var(--card);
+  box-shadow: 0 3px 0 rgba(60, 45, 20, 0.07);
+  min-width: 0;
 }
-.chip-uncertain {
-  box-shadow: 0 0 0 4px var(--warning-border);
-}
-.chip-hanzi {
-  min-height: 120px;
-  border-radius: 16px;
-  border: 2px solid var(--border);
+.wcard-body {
+  min-height: 88px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
-  padding: 16rpx 12rpx;
-  box-sizing: border-box;
+  border-radius: 12px;
+  padding: 4rpx 6rpx;
 }
-.chip-lock {
+.wcard-sel {
+  background: var(--orange-soft);
+  box-shadow: 0 3px 0 var(--orange-edge);
+}
+.wcard-sel .wcard-body {
+  background: var(--orange);
+}
+.wcard-sel .pw-py {
+  color: rgba(255, 255, 255, 0.85);
+}
+.wcard-sel .pw-tx {
+  color: #ffffff;
+}
+.wcard-lock {
+  background: var(--green-soft);
+  box-shadow: 0 3px 0 var(--green-edge);
+}
+.wcard-lock .pw-tx {
+  color: var(--green-edge);
+}
+.wcard-dup {
+  opacity: 0.62;
+  background: transparent;
+  box-shadow: none;
+  border: 2px dashed var(--line);
+}
+.wcard-warn {
+  outline: 3px dashed var(--yellow);
+  outline-offset: -3px;
+}
+.wcard-check {
+  position: absolute;
+  top: -10rpx;
+  right: -8rpx;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #ffffff;
   font-size: 15px;
-}
-.chip-locked {
-  background: var(--locked-bg);
-  border-color: var(--locked-border);
-  color: var(--locked-fg);
-}
-.chip-selected {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-fg);
-}
-.chip-selected .pw-py {
-  color: var(--primary-fg);
-}
-.chip-normal {
-  background: var(--chip-bg);
-  border-color: var(--border);
-  color: var(--chip-fg);
-}
-.chip-dup {
-  background: var(--chip-bg);
-  border-color: var(--border);
-  color: var(--fg-muted);
-  opacity: 0.6;
-}
-
-/* 家长低频操作（D-29）：48px 下限即可 */
-.chip-actions {
-  display: flex;
-  gap: 16rpx;
-}
-.chip-action {
-  flex: 1;
-  min-height: 48px;
-  border: 2px solid var(--border);
-  border-radius: 9999px;
-  font-size: 17px;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
-  background: var(--bg);
-  color: var(--fg);
+  box-shadow: 0 2px 0 var(--green-edge);
+  z-index: 2;
 }
-.chip-action-muted {
-  color: var(--fg-muted);
+.pw-on-fill .pw-py {
+  color: rgba(255, 255, 255, 0.85);
 }
-.chip-note {
+
+/* 图标操作行：两个圆形按钮，48px 触达 */
+.wcard-acts {
+  display: flex;
+  justify-content: center;
+  gap: 18rpx;
+}
+.act {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue-edge);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.act-edit {
+  background: var(--yellow-soft);
+  color: #8A6A10;
+}
+.act-busy {
+  opacity: 0.5;
+}
+.wcard-flag {
   text-align: center;
-  font-size: 15px;
-  color: var(--fg-muted);
-}
-.chip-note-warn {
-  color: var(--warning);
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 固定底栏 */
@@ -168,7 +252,9 @@
   bottom: 0;
   padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
   background: var(--bg);
-  border-top: 2px solid var(--border);
+}
+.cta {
+  width: 100%;
 }
 
 /* 读音修正弹窗 */
@@ -176,7 +262,7 @@
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(58, 52, 44, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,8 +271,7 @@
 .modal-panel {
   width: 100%;
   max-width: 640rpx;
-  background: var(--bg-elevated);
-  border-radius: 16px;
+  border-radius: 24px;
   padding: 40rpx;
   display: flex;
   flex-direction: column;
@@ -194,16 +279,17 @@
 }
 .modal-title {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
 }
 .modal-sub {
   font-size: 16px;
-  color: var(--fg-muted);
+  color: var(--muted);
 }
 .modal-input {
   min-height: 60px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
   padding: 0 24rpx;
   font-size: 20px;
   margin-top: 16rpx;

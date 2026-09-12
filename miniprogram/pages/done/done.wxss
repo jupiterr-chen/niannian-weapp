@@ -3,6 +3,7 @@
 }
 .done-block {
   flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -10,22 +11,65 @@
   gap: 16rpx;
   text-align: center;
 }
+.done-emoji {
+  font-size: 96px;
+  line-height: 1.1;
+}
 .done-title {
   font-size: 40px;
-  font-weight: 700;
+  font-weight: 800;
 }
+
+/* 三个统计胶囊 */
+.done-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24rpx;
+}
+.stat-pill {
+  flex: 1;
+  max-width: 220rpx;
+  border-radius: 20px;
+  padding: 20rpx 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+.stat-num {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.stat-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+.stat-blue {
+  background: var(--blue-soft);
+  color: var(--blue-edge);
+}
+.stat-green {
+  background: var(--green-soft);
+  color: var(--green-edge);
+}
+.stat-orange {
+  background: var(--orange-soft);
+  color: var(--orange-edge);
+}
+
 .focus-card {
   width: 100%;
-  border: 2px solid var(--warning-border);
-  background: var(--warning-bg);
-  border-radius: 16px;
+  border: 3px solid var(--yellow);
+  background: var(--yellow-soft);
+  border-radius: 24px;
   padding: 32rpx;
   display: flex;
   flex-direction: column;
   gap: 24rpx;
 }
 .focus-title {
-  color: var(--warning);
+  color: #8A6A10;
 }
 .focus-grid {
   gap: 32rpx;

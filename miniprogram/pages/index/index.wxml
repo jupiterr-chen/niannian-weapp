@@ -1,15 +1,16 @@
 <view class="page home">
   <view class="home-head">
+    <text class="home-emoji">📖</text>
     <text class="page-title">听写助手</text>
     <text class="muted home-sub">拍下作业，帮孩子听写生字词</text>
   </view>
 
   <view class="home-body">
-    <button class="btn-primary btn-hero" bindtap="goUpload">📷 上传今天的作业</button>
+    <button class="btn-pop btn-hero" hover-class="btn-pop-press" bindtap="goUpload">📷 上传今天的作业</button>
 
-    <button wx:if="{{lastSessionId !== null}}" class="btn-secondary" bindtap="continueLast">继续上次听写</button>
+    <button wx:if="{{lastSessionId !== null}}" class="btn-secondary" hover-class="btn-secondary-press" bindtap="continueLast">▶ 继续上次听写</button>
 
-    <button class="btn-ghost" bindtap="goHistory">历史记录</button>
+    <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="goHistory">🕘 历史记录</button>
   </view>
 
   <view class="home-foot">

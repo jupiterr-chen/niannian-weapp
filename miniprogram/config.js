@@ -10,4 +10,9 @@ try {
 
 module.exports = {
   baseUrl: local.baseUrl || "http://127.0.0.1:3000",
+  // 开发截图辅助（只在 config.local.js 里出现，见 config.local.example.js）：
+  // devStartPage: 启动后自动跳转的页面（含参数），如 "/pages/select/select?id=8"
+  // devAutoUnlock: 听写页加载后自动点开始（跳过解锁遮罩），用于截主界面
+  devStartPage: local.devStartPage || null,
+  devAutoUnlock: !!local.devAutoUnlock,
 };

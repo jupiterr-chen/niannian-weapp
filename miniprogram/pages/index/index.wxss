@@ -6,7 +6,12 @@
   margin-bottom: 48rpx;
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
+  align-items: center;
+  gap: 8rpx;
+}
+.home-emoji {
+  font-size: 72px;
+  line-height: 1.1;
 }
 .home-sub {
   font-size: 22px;
@@ -22,6 +27,6 @@
 }
 .home-privacy {
   font-size: 15px;
-  color: var(--fg-muted);
+  color: var(--muted);
   text-decoration: underline;
 }

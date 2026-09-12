@@ -12,6 +12,7 @@
 const { request } = require("../../utils/request");
 const audio = require("../../utils/audio");
 const storage = require("../../utils/storage");
+const config = require("../../config");
 
 const REPLAY_DEBOUNCE_MS = 800;
 
@@ -95,6 +96,12 @@ Page({
       cursorIndex: body.session.cursor,
     });
     this.refreshCurrent();
+    // 开发截图辅助：跳过解锁遮罩直接进入主界面（本地配置才会开启）。
+    if (config.devAutoUnlock && !this.data.unlocked) {
+      setTimeout(() => {
+        if (!this.data.unlocked) this.handleUnlock();
+      }, 500);
+    }
   },
 
   refreshCurrent() {

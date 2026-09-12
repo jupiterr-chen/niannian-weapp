@@ -10,9 +10,9 @@
   ],
   "window": {
     "navigationBarTitleText": "听写助手",
-    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarBackgroundColor": "#FFF6EA",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#ffffff",
+    "backgroundColor": "#FFF6EA",
     "backgroundTextStyle": "dark"
   },
   "style": "v2",
