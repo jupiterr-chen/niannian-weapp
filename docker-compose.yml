@@ -12,9 +12,8 @@ services:
       - ./data:/data
     env_file:
       # 真实密钥（ARK_API_KEY / VOLC_TTS_API_KEY 等）只在这里注入到运行时
-      # 容器环境变量，不会进镜像层。部署到目标机前，先在
-      # <deploy-dir>/<项目目录>/ 下按 .env.docker.example 的说明建好这个
-      # 文件。
+      # 容器环境变量，不会进镜像层。部署到目标机前，先在部署目录下按
+      # .env.docker.example 的说明建好这个文件。
       - .env.local
     environment:
       # 覆盖 .env.local 里给本机 `next dev` 用的开发期取值：compose 的

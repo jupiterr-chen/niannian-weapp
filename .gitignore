@@ -46,3 +46,6 @@ data/
 
 !.env.example
 !.env.docker.example
+
+# 本地部署信息（真实内网地址），不进公开仓库
+DEPLOY.local.md

@@ -1,6 +1,9 @@
 # 部署与运维
 
-部署位置：`<user>@<nas-ip>:<deploy-dir>`
+> 占位符约定：`<nas-user>` SSH 用户名、`<nas-ip>` NAS 的内网 IP、`<deploy-dir>` 服务器上的部署目录、`<tailnet-ip>` Tailscale 地址。
+> 真实地址记录在本地不入库的 `DEPLOY.local.md`。
+
+部署位置：`<nas-user>@<nas-ip>:<deploy-dir>`
 访问地址：**http://<nas-ip>:3000**
 
 ---
@@ -11,14 +14,14 @@
 2. Safari：分享 → 添加到主屏幕；Chrome：菜单 → 添加到主屏幕
 3. 之后从桌面图标进入，全屏无地址栏，和 App 一样
 
-> 家里如果有设备配了代理（本机就跑着一个 `<nas-ip>:1081`），要把 `192.168.*` 加进代理的绕过列表，否则请求会被代理吞掉、页面一直转圈。**这个坑在联调时真实踩到过**：TCP 端口通、HTTP 却超时，症状很有迷惑性。
+> 家里如果有设备配了代理（比如 NAS 上跑的代理端口），要把内网网段加进代理的绕过列表，否则请求会被代理吞掉、页面一直转圈。**这个坑在联调时真实踩到过**：TCP 端口通、HTTP 却超时，症状很有迷惑性。
 
 ---
 
 ## 日常运维
 
 ```bash
-ssh <user>@<nas-ip>
+ssh <nas-user>@<nas-ip>
 cd <deploy-dir>
 ```
 
@@ -41,11 +44,11 @@ cd <deploy-dir>
 ```bash
 tar -czf - --exclude=./node_modules --exclude=./.next --exclude=./data \
     --exclude=./.git --exclude=./.env.local . \
-  | ssh <user>@<nas-ip> 'tar -xzf - -C <deploy-dir>'
+  | ssh <nas-user>@<nas-ip> 'tar -xzf - -C <deploy-dir>'
 ```
 
 ```bash
-ssh <user>@<nas-ip> 'cd <deploy-dir> && docker compose up -d --build'
+ssh <nas-user>@<nas-ip> 'cd <deploy-dir> && docker compose up -d --build'
 ```
 
 `.env.local` 有意排除在传输之外——密钥只在首次部署时传一次，避免每次更新都在网络上多传一遍。改了密钥再单独 `scp` 并 `chmod 600`。
@@ -57,12 +60,12 @@ ssh <user>@<nas-ip> 'cd <deploy-dir> && docker compose up -d --build'
 所有状态都在一个目录里，拷走它就是完整备份：
 
 ```bash
-ssh <user>@<nas-ip> 'cd <deploy-dir> && tar -czf - data' > tingxie-backup-$(date +%F).tar.gz
+ssh <nas-user>@<nas-ip> 'cd <deploy-dir> && tar -czf - data' > tingxie-backup-$(date +%F).tar.gz
 ```
 
 里面是：`app.db`（作业、词库、会话、生词本）、`images/`（作业照片）、`audio/`（语音缓存）。
 
-音频缓存丢了不要紧，会自动重新合成；数据库丢了才是真丢。当前体积约 1.3 MB，长期也就几十兆量级。
+音频缓存丢了不要紧，会自动重新合成；数据库丢了才是真丢。
 
 ---
 
@@ -87,10 +90,10 @@ sudo chown -R 1000:1000 <deploy-dir>/data
 
 ## 可选：用 Tailscale 换真实 HTTPS
 
-这台机器已经在 Tailscale 网络里（`<tailnet-ip>`）。用它可以拿到一张**受信任的真实证书**，不用自签、不用在每台设备装根证书：
+如果 NAS 在 Tailscale 网络里，可以用它拿到一张**受信任的真实证书**，不用自签、不用在每台设备装根证书：
 
 ```bash
-ssh <user>@<nas-ip> 'sudo tailscale serve --bg --https=443 3000'
+ssh <nas-user>@<nas-ip> 'sudo tailscale serve --bg --https=443 3000'
 ```
 
 之后用 `https://<机器名>.<tailnet>.ts.net` 访问。这么做能解锁三样纯 http 下拿不到的能力：
