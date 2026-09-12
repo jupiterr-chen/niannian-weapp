@@ -109,6 +109,9 @@ page {
   justify-content: center;
   font-weight: 700;
   color: #ffffff;
+  /* 统一内边距：真机上原生 button 的默认 padding 各版本不一，显式钉死 */
+  padding: 0 24rpx;
+  box-sizing: border-box;
   transition: transform 0.06s ease, box-shadow 0.06s ease;
 }
 .btn-pop-press {
@@ -138,6 +141,8 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 24rpx;
+  box-sizing: border-box;
   transition: transform 0.06s ease, box-shadow 0.06s ease;
 }
 .btn-secondary-press {
