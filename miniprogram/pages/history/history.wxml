@@ -3,7 +3,7 @@
 
   <view wx:if="{{state === 'loading'}}" class="muted"><text>正在加载…</text></view>
   <view wx:elif="{{state === 'error'}}" class="muted"><text>加载失败了，请稍后再试。</text></view>
-  <view wx:elif="{{history.length === 0}}" class="muted"><text>还没有听写记录。</text></view>
+  <view wx:elif="{{history.length === 0}}" class="muted"><text class="l">还没有听写记录。</text></view>
 
   <view wx:else class="list">
     <view wx:for="{{history}}" wx:key="sessionId" class="card item">
@@ -32,6 +32,6 @@
   </view>
 
   <view class="history-cta">
-    <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="goHome">回到首页</button>
+    <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="goHome"><text class="btn-label">回到首页</text></button>
   </view>
 </view>

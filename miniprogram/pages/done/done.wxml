@@ -34,6 +34,6 @@
   </view>
 
   <view class="done-cta">
-    <button class="btn-pop btn-primary" hover-class="btn-pop-press" bindtap="goHome">回到首页</button>
+    <button class="btn-pop btn-primary" hover-class="btn-pop-press" bindtap="goHome"><text class="btn-label">回到首页</text></button>
   </view>
 </view>

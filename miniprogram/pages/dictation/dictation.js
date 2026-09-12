@@ -116,10 +116,9 @@ Page({
 
   refreshStatus() {
     const { playState, replaying } = this.data;
-    this.setData({
-      statusText:
-        playState === "playing" ? (replaying ? "正在朗读（慢速再读一遍）" : "正在朗读") : "轮到你写啦",
-    });
+    const text =
+      playState === "playing" ? (replaying ? "正在慢速再读一遍" : "正在朗读") : "轮到你写啦";
+    this.setData({ statusText: text, statusLong: text.length > 6 });
   },
 
   // 播放当前词。playState 由引擎回调驱动；任何新的播放/停止都会作废旧回调。

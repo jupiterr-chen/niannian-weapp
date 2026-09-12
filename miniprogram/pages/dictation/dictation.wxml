@@ -2,16 +2,17 @@
   <view wx:if="{{state === 'loading'}}" class="state-block"><text class="muted">正在加载听写会话…</text></view>
 
   <view wx:elif="{{state === 'error'}}" class="state-block">
-    <text>{{loadError}}</text>
-    <button class="btn-pop btn-primary state-btn" hover-class="btn-pop-press" bindtap="goHome">回到首页</button>
+    <text class="l">{{loadError}}</text>
+    <button class="btn-pop btn-primary state-btn" hover-class="btn-pop-press" bindtap="goHome"><text class="btn-label">回到首页</text></button>
   </view>
 
   <block wx:else>
     <!-- 铁律 4：进入页面不自动播放，必须由一次明确点击解锁音频。 -->
     <view wx:if="{{!unlocked}}" class="unlock">
       <text class="unlock-emoji">🎧</text>
-      <text class="unlock-text">准备好了就点一下，开始听写</text>
-      <button class="btn-pop btn-primary unlock-btn" hover-class="btn-pop-press" bindtap="handleUnlock">▶ 开始听写</button>
+      <text class="unlock-text">准备好了就点一下，</text>
+      <text class="unlock-text">开始听写</text>
+      <button class="btn-pop btn-primary unlock-btn" hover-class="btn-pop-press" bindtap="handleUnlock"><text class="btn-label">▶ 开始听写</text></button>
     </view>
 
     <view class="pane pane-info">
@@ -29,19 +30,20 @@
       <!-- 状态区是这一屏的视觉主角——孩子只关心「现在该听还是该写」。 -->
       <view class="status">
         <text class="status-icon">{{playState === "playing" ? "🔊" : "✍️"}}</text>
-        <text class="status-text">{{statusText}}</text>
+        <text class="status-text {{statusLong ? "status-text-long" : ""}}">{{statusText}}</text>
         <text wx:if="{{degraded}}" class="status-sub">读音可能不准</text>
-        <text wx:if="{{ttsError}}" class="status-sub">语音暂时不可用，点「再读一遍」重试</text>
+        <text wx:if="{{ttsError}}" class="status-sub l">语音暂时不可用，</text>
+        <text wx:if="{{ttsError}}" class="status-sub l">点「再读一遍」重试</text>
         <text wx:if="{{current.hintLevel >= 3}}" class="pinyin status-pinyin">{{current.word.pinyin}}</text>
       </view>
     </view>
 
     <view class="pane pane-actions">
       <view class="buttons">
-        <button class="btn-pop btn-primary replay" hover-class="btn-pop-press" bindtap="onReplay" disabled="{{!unlocked}}">🔊 再 读 一 遍</button>
+        <button class="btn-pop btn-primary replay" hover-class="btn-pop-press" bindtap="onReplay" disabled="{{!unlocked}}"><text class="btn-label">🔊 再 读 一 遍</text></button>
         <view class="btn-row">
-          <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="advanceSkip" disabled="{{!unlocked}}">🤔 不会，跳过</button>
-          <button class="btn-secondary btn-success" hover-class="btn-secondary-press" bindtap="advanceWritten" disabled="{{!unlocked}}">✅ 写好了</button>
+          <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="advanceSkip" disabled="{{!unlocked}}"><text class="btn-label">🤔 不会，跳过</text></button>
+          <button class="btn-secondary btn-success" hover-class="btn-secondary-press" bindtap="advanceWritten" disabled="{{!unlocked}}"><text class="btn-label">✅ 写好了</text></button>
         </view>
       </view>
 
@@ -55,8 +57,8 @@
       <view class="end-panel" catchtap="noop">
         <text class="end-title">真的要结束吗？</text>
         <text class="end-sub">还有 {{remainingCount}} 个词没写完</text>
-        <button class="btn-pop btn-primary end-continue" hover-class="btn-pop-press" bindtap="closeEnd">继续听写</button>
-        <button class="end-stop" bindtap="confirmEnd">结束</button>
+        <button class="btn-pop btn-primary end-continue" hover-class="btn-pop-press" bindtap="closeEnd"><text class="btn-label">继续听写</text></button>
+        <button class="end-stop" bindtap="confirmEnd"><text class="btn-label">结束</text></button>
       </view>
     </view>
   </block>

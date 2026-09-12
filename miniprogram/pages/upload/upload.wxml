@@ -2,16 +2,18 @@
   <text class="page-title">上传今天的作业</text>
 
   <view wx:if="{{error}}" class="notice-danger">
-    <text>{{error}}</text>
-    <button class="btn-secondary reset-btn" hover-class="btn-secondary-press" bindtap="resetAll">重新选图</button>
+    <text class="l">{{error}}</text>
+    <button class="btn-secondary reset-btn" hover-class="btn-secondary-press" bindtap="resetAll">
+      <text class="btn-label">重新选图</text>
+    </button>
   </view>
 
   <view class="upload-block">
     <block wx:if="{{!submitting}}">
       <button class="pick-btn" hover-class="pick-press" bindtap="chooseImages">
         <text class="pick-emoji">📸</text>
-        <text class="pick-text">{{images.length === 0 ? "点这里拍照或选照片" : "继续添加照片"}}</text>
-        <text class="pick-sub">可多选</text>
+        <text class="pick-text l">{{images.length === 0 ? "点这里拍照或选照片" : "继续添加照片"}}</text>
+        <text class="pick-sub l">可多选</text>
       </button>
 
       <view wx:if="{{images.length > 0}}" class="thumbs">
@@ -24,11 +26,11 @@
 
     <view wx:if="{{submitting}}" class="loading">
       <view class="spinner" />
-      <text class="loading-text">正在认字，大约 10 秒…</text>
+      <text class="loading-text l">正在认字，大约 10 秒…</text>
     </view>
   </view>
 
   <button class="btn-pop btn-primary" hover-class="btn-pop-press" bindtap="submit" disabled="{{images.length === 0 || submitting}}">
-    {{submitting ? "正在识别…" : "🔍 开始识别"}}
+    <text class="btn-label">{{submitting ? "正在识别…" : "🔍 开始识别"}}</text>
   </button>
 </view>

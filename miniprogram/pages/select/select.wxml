@@ -2,8 +2,11 @@
   <view wx:if="{{state === 'loading'}}" class="state-block"><text class="muted">正在加载识别结果…</text></view>
 
   <view wx:elif="{{state === 'missing'}}" class="state-block">
-    <text>找不到这份识别结果了，可能是链接不对或者作业记录已经不在了。</text>
-    <button class="btn-pop btn-primary state-btn" bindtap="goUpload">重新上传</button>
+    <text class="l">找不到这份识别结果了，</text>
+    <text class="l">可能是链接不对或者作业记录已经不在了。</text>
+    <button class="btn-pop btn-primary state-btn" bindtap="goUpload">
+        <text class="btn-label">重新上传</text>
+      </button>
   </view>
 
   <block wx:else>
@@ -46,7 +49,9 @@
     <view class="section">
       <view class="section-head">
         <text class="heading">生字组词</text>
-        <button class="pick-btn {{picking ? '' : 'pick-press'}}" bindtap="handlePick" disabled="{{picking}}">{{picking ? "选词中…" : "✨ 帮我选"}}</button>
+        <button class="pick-btn {{picking ? '' : 'pick-press'}}" bindtap="handlePick" disabled="{{picking}}">
+        <text class="btn-label">{{picking ? "选词中…" : "✨ 帮我选"}}</text>
+      </button>
       </view>
 
       <view wx:for="{{rows}}" wx:for-item="row" wx:key="rowIndex" class="card row-card">
@@ -75,12 +80,17 @@
             <view wx:elif="{{degradedId === word.id}}" class="wcard-flag">读音可能不准</view>
           </view>
         </view>
-        <text wx:if="{{!row.hasEligible}}" class="row-note">这一行的组词都已经在必听词里了，不用另外选。</text>
+        <block wx:if="{{!row.hasEligible}}">
+          <text class="row-note l">这一行的组词都已经在必听词里了，</text>
+          <text class="row-note l">不用另外选。</text>
+        </block>
       </view>
     </view>
 
     <view class="bottom-bar">
-      <button class="btn-pop btn-primary btn-success cta" hover-class="btn-pop-press" bindtap="startDictation" disabled="{{creating}}">{{creating ? "正在准备…" : "🚀 开始听写"}}</button>
+      <button class="btn-pop btn-primary btn-success cta" hover-class="btn-pop-press" bindtap="startDictation" disabled="{{creating}}">
+        <text class="btn-label">{{creating ? "正在准备…" : "🚀 开始听写"}}</text>
+      </button>
     </view>
   </block>
 
@@ -88,11 +98,16 @@
   <view wx:if="{{correction}}" class="modal-mask" catchtap="cancelCorrection">
     <view class="modal-panel card" catchtap="noop">
       <text class="modal-title">「{{correction.word}}」读音不对？</text>
-      <text class="modal-sub">换一个读音相同或相近的词，以后就用这个词来发音。</text>
+      <text class="modal-sub l">换一个读音相同或相近的词，</text>
+      <text class="modal-sub l">以后就用这个词来发音。</text>
       <input class="modal-input" value="{{correction.value}}" bindinput="onCorrectionInput" />
       <view class="modal-row">
-        <button class="btn-secondary modal-cancel" hover-class="btn-secondary-press" bindtap="cancelCorrection">取消</button>
-        <button class="btn-pop btn-primary modal-ok" hover-class="btn-pop-press" bindtap="submitCorrection" disabled="{{correctionSubmitting || !correction.canSubmit}}">{{correctionSubmitting ? "保存中…" : "确认修正"}}</button>
+        <button class="btn-secondary modal-cancel" hover-class="btn-secondary-press" bindtap="cancelCorrection">
+          <text class="btn-label">取消</text>
+        </button>
+        <button class="btn-pop btn-primary modal-ok" hover-class="btn-pop-press" bindtap="submitCorrection" disabled="{{correctionSubmitting || !correction.canSubmit}}">
+            <text class="btn-label">{{correctionSubmitting ? "保存中…" : "确认修正"}}</text>
+          </button>
       </view>
     </view>
   </view>

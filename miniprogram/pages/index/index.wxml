@@ -6,11 +6,17 @@
   </view>
 
   <view class="home-body">
-    <button class="btn-pop btn-hero" hover-class="btn-pop-press" bindtap="goUpload">📷 上传今天的作业</button>
+    <button class="btn-pop btn-hero" hover-class="btn-pop-press" bindtap="goUpload">
+      <text class="btn-label">📷 上传今天的作业</text>
+    </button>
 
-    <button wx:if="{{lastSessionId !== null}}" class="btn-secondary" hover-class="btn-secondary-press" bindtap="continueLast">▶ 继续上次听写</button>
+    <button wx:if="{{lastSessionId !== null}}" class="btn-secondary" hover-class="btn-secondary-press" bindtap="continueLast">
+      <text class="btn-label">▶ 继续上次听写</text>
+    </button>
 
-    <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="goHistory">🕘 历史记录</button>
+    <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="goHistory">
+      <text class="btn-label">🕘 历史记录</text>
+    </button>
   </view>
 
   <view class="home-foot">

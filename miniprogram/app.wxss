@@ -72,6 +72,23 @@ page {
   color: var(--muted);
 }
 
+/* 按钮文字：显式包一层 <text class="btn-label">。裸文字在 display:flex 的
+   button 里是匿名 flex 子项，中文字符间都可断行，会被引擎随机折行；
+   包一层并禁断行后，短标签永远单行，超宽走省略号。 */
+.btn-label {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+/* 语义分行的长句：每行一个 <text class="l">，断点由我们定，不靠引擎 */
+.l {
+  display: block;
+}
+
 /* 白色圆角卡片 */
 .card {
   background: var(--card);
