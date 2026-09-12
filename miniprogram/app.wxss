@@ -76,11 +76,16 @@ page {
    button 里是匿名 flex 子项，中文字符间都可断行，会被引擎随机折行；
    包一层并禁断行后，短标签永远单行，超宽走省略号。 */
 .btn-label {
+  /* 关键：显式占满整行并居中，不作为可收缩的 flex 子项参与弹性计算。
+     真机上 overflow:hidden 会让 flex 子项的自动最小宽度归零，标签会被
+     压出"上传…"这样的截断——宽度定死为 100% 后彻底免疫。 */
+  display: block;
+  width: 100%;
+  text-align: center;
   white-space: nowrap;
   word-break: keep-all;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
   line-height: 1.2;
 }
 
