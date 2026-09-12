@@ -30,7 +30,7 @@
       <!-- 状态区是这一屏的视觉主角——孩子只关心「现在该听还是该写」。 -->
       <view class="status">
         <text class="status-icon">{{playState === "playing" ? "🔊" : "✍️"}}</text>
-        <text class="status-text {{statusLong ? "status-text-long" : ""}}">{{statusText}}</text>
+        <text class="status-text {{statusLong ? 'status-text-long' : ''}}">{{statusText}}</text>
         <text wx:if="{{degraded}}" class="status-sub">读音可能不准</text>
         <text wx:if="{{ttsError}}" class="status-sub l">语音暂时不可用，</text>
         <text wx:if="{{ttsError}}" class="status-sub l">点「再读一遍」重试</text>
