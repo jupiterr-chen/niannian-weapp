@@ -1,0 +1,172 @@
+/**
+ * 设计令牌与共享样式，翻译自 Web 版 globals.css。
+ * Web 版用 clamp(下限, 视口相对值, 上限)，而 D-27 的结论是：手机竖屏上
+ * clamp 恒取下限值——小程序只跑在手机上，所以这里直接用下限值本身，
+ * 这就是手机上的真实观感，不是「兜底最小值」。
+ * §9 硬指标：正文 ≥22px、听写页序号 ≥72px、主操作 ≥88px、对比度 ≥4.5:1。
+ */
+page {
+  --bg: #ffffff;
+  --bg-elevated: #ffffff;
+  --fg: #14171a;
+  --fg-muted: #44494e;
+  --border: #d7dbe0;
+  --primary: #1d4ed8;
+  --primary-fg: #ffffff;
+  --success: #15803d;
+  --success-bg: #ecfdf3;
+  --success-fg: #ffffff;
+  --warning: #a16207;
+  --warning-bg: #fef9c3;
+  --warning-border: #eab308;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --locked-bg: #ecfdf3;
+  --locked-fg: #15803d;
+  --locked-border: #86efac;
+  --chip-bg: #eef0f3;
+  --chip-fg: #33383d;
+
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 22px; /* --fs-body 手机端真实值 */
+  line-height: 1.6;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  height: 100%;
+}
+
+/* 拼音：等宽字体、比汉字小一号，永远叠在汉字正上方，不折叠。 */
+.pinyin {
+  font-family: Menlo, Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+
+/* 汉字+拼音竖排小组（PinyinWord 的等价物）。 */
+.pw {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+.pw-py {
+  font-size: 15px;
+  color: var(--fg-muted);
+  line-height: 1.2;
+}
+.pw-tx {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.pw-sm .pw-tx {
+  font-size: 22px;
+}
+
+/* 主按钮（听写页「再读一遍」、各页主 CTA）：高 ≥88px，字 24px。 */
+.btn-primary {
+  min-height: 88px;
+  font-size: 24px;
+  font-weight: 700;
+  border-radius: 24px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-primary[disabled] {
+  opacity: 0.5;
+}
+
+/* 次级按钮（「不会，跳过」等）：同样 ≥88px 可点区，字 20px。 */
+.btn-secondary {
+  min-height: 88px;
+  font-size: 20px;
+  font-weight: 600;
+  border-radius: 24px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-secondary[disabled] {
+  opacity: 0.5;
+}
+.btn-success {
+  background: var(--success);
+  border: 2px solid var(--success);
+  color: var(--success-fg);
+}
+
+/* 幽灵按钮（首页「历史记录」）。 */
+.btn-ghost {
+  min-height: 88px;
+  font-size: 20px;
+  font-weight: 600;
+  border-radius: 24px;
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 首页英雄按钮：高 160px、字 26px。 */
+.btn-hero {
+  min-height: 160px;
+  font-size: 26px;
+  border-radius: 32px;
+}
+
+/* 页面主容器：统一留白与最大宽度。 */
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 24rpx 32rpx 48rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+.page-title {
+  font-size: 28px; /* --fs-page-title */
+  font-weight: 700;
+}
+.heading {
+  font-size: 24px; /* --fs-heading */
+  font-weight: 700;
+}
+.summary {
+  font-size: 24px; /* --fs-summary */
+  font-weight: 600;
+}
+.muted {
+  color: var(--fg-muted);
+}
+
+/* 错误/成功提示条。 */
+.notice-danger {
+  border: 2px solid var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-radius: 16px;
+  padding: 24rpx;
+  font-size: 22px;
+}
+.notice-success {
+  border: 2px solid var(--success);
+  background: var(--success-bg);
+  color: var(--success);
+  border-radius: 16px;
+  padding: 24rpx;
+  font-size: 22px;
+}
+
+/* 选词页词语卡片栅格：手机竖屏固定 2 列（D-28）。 */
+.chip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24rpx;
+}

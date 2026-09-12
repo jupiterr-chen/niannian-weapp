@@ -1,0 +1,62 @@
+<view class="dictation">
+  <view wx:if="{{state === 'loading'}}" class="state-block"><text class="muted">正在加载听写会话…</text></view>
+
+  <view wx:elif="{{state === 'error'}}" class="state-block">
+    <text>{{loadError}}</text>
+    <button class="btn-primary state-btn" bindtap="goHome">回到首页</button>
+  </view>
+
+  <block wx:else>
+    <!-- 铁律 4：进入页面不自动播放，必须由一次明确点击解锁音频。 -->
+    <view wx:if="{{!unlocked}}" class="unlock">
+      <text class="unlock-text">准备好了就点一下，开始听写</text>
+      <button class="btn-primary unlock-btn" bindtap="handleUnlock">▶ 开始听写</button>
+    </view>
+
+    <view class="pane pane-info">
+      <view class="head">
+        <view class="seq-line">
+          <text class="seq-label">第</text>
+          <text class="seq-number">{{current.seq}} / {{total}}</text>
+          <text class="seq-label">个</text>
+        </view>
+        <view class="bar">
+          <view class="bar-fill" style="width: {{progressPct}}%" />
+        </view>
+      </view>
+
+      <!-- 状态区是这一屏的视觉主角——孩子只关心「现在该听还是该写」。 -->
+      <view class="status">
+        <text class="status-icon">{{playState === "playing" ? "🔊" : "✍️"}}</text>
+        <text class="status-text">{{statusText}}</text>
+        <text wx:if="{{degraded}}" class="status-sub">读音可能不准</text>
+        <text wx:if="{{ttsError}}" class="status-sub">语音暂时不可用，点「再读一遍」重试</text>
+        <text wx:if="{{current.hintLevel >= 3}}" class="pinyin status-pinyin">{{current.word.pinyin}}</text>
+      </view>
+    </view>
+
+    <view class="pane pane-actions">
+      <view class="buttons">
+        <button class="btn-primary" bindtap="onReplay" disabled="{{!unlocked}}">再 读 一 遍</button>
+        <view class="btn-row">
+          <button class="btn-secondary" bindtap="advanceSkip" disabled="{{!unlocked}}">不会，跳过</button>
+          <button class="btn-secondary btn-success" bindtap="advanceWritten" disabled="{{!unlocked}}">写好了，下一个</button>
+        </view>
+      </view>
+
+      <view class="end-zone">
+        <text class="end-trigger" bindtap="openEnd">结束听写</text>
+      </view>
+    </view>
+
+    <!-- D-23：点击 + 二次确认，「继续听写」是视觉主选项，误触导向安全一侧。 -->
+    <view wx:if="{{endOpen}}" class="end-mask" catchtap="closeEnd">
+      <view class="end-panel" catchtap="noop">
+        <text class="end-title">真的要结束吗？</text>
+        <text class="end-sub">还有 {{remainingCount}} 个词没写完</text>
+        <button class="btn-primary end-continue" bindtap="closeEnd">继续听写</button>
+        <button class="end-stop" bindtap="confirmEnd">结束</button>
+      </view>
+    </view>
+  </block>
+</view>

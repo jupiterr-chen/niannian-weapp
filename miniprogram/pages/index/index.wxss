@@ -1,0 +1,27 @@
+.home {
+  justify-content: center;
+}
+.home-head {
+  text-align: center;
+  margin-bottom: 48rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+.home-sub {
+  font-size: 22px;
+}
+.home-body {
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+.home-foot {
+  margin-top: 48rpx;
+  text-align: center;
+}
+.home-privacy {
+  font-size: 15px;
+  color: var(--fg-muted);
+  text-decoration: underline;
+}

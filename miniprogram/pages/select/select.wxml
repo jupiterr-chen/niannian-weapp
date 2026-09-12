@@ -1,0 +1,96 @@
+<view class="page select-page">
+  <view wx:if="{{state === 'loading'}}" class="state-block"><text class="muted">正在加载识别结果…</text></view>
+
+  <view wx:elif="{{state === 'missing'}}" class="state-block">
+    <text>找不到这份识别结果了，可能是链接不对或者作业记录已经不在了。</text>
+    <button class="btn-primary state-btn" bindtap="goUpload">重新上传</button>
+  </view>
+
+  <block wx:else>
+    <text class="page-title">{{title}}</text>
+
+    <view class="summary summary-bar">
+      <text>必听 {{requiredCount}} ＋ 选听 {{optionalCount}} ＝ {{totalCount}} 个</text>
+    </view>
+
+    <view wx:if="{{pageError}}" class="notice-danger"><text>{{pageError}}</text></view>
+    <view wx:if="{{correctionNotice}}" class="notice-success"><text>{{correctionNotice}}</text></view>
+
+  <view class="section">
+    <text class="heading">必听词语（不能取消）</text>
+    <view class="chip-grid">
+      <view wx:for="{{required}}" wx:key="id" class="chip-card {{item.pinyinUncertain ? 'chip-uncertain' : ''}}">
+        <view class="chip-hanzi chip-locked">
+          <text class="chip-lock">🔒 必听</text>
+          <view class="pw">
+            <text class="pinyin pw-py">{{item.pinyin}}</text>
+            <text class="pw-tx">{{item.text}}</text>
+          </view>
+        </view>
+        <view class="chip-actions">
+          <view class="chip-action" data-id="{{item.id}}" bindtap="previewWord">{{previewingId === item.id ? "…" : "🔊 试听"}}</view>
+          <view class="chip-action chip-action-muted" data-word="{{item.text}}" data-id="{{item.id}}" bindtap="correctWord">✏️ 改读音</view>
+        </view>
+        <text wx:if="{{item.pinyinUncertain}}" class="chip-note chip-note-warn">这个词的读音需要你确认</text>
+        <text wx:if="{{degradedId === item.id}}" class="chip-note">读音可能不准</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="rows-head">
+      <text class="heading">生字组词（每行选一个）</text>
+      <button class="pick-btn" bindtap="handlePick" disabled="{{picking}}">{{picking ? "选词中…" : "✨ 帮我选"}}</button>
+    </view>
+
+    <view wx:for="{{rows}}" wx:for-item="row" wx:key="rowIndex" class="row-card">
+      <view class="row-head">
+        <text class="pinyin row-pinyin">{{row.pinyin}}</text>
+        <text class="row-char">{{row.char}}</text>
+        <text class="row-index">第 {{row.rowIndex + 1}} 行</text>
+      </view>
+      <view class="chip-grid">
+        <view wx:for="{{row.words}}" wx:for-item="word" wx:key="id" class="chip-card {{word.pinyinUncertain ? 'chip-uncertain' : ''}}">
+          <view
+            class="chip-hanzi {{word.duplicateOfRequired ? 'chip-dup' : word.selected ? 'chip-selected' : 'chip-normal'}}"
+            data-row="{{row.rowIndex}}"
+            data-id="{{word.id}}"
+            data-dup="{{word.duplicateOfRequired}}"
+            bindtap="selectWord"
+          >
+            <view class="pw">
+              <text class="pinyin pw-py">{{word.pinyin}}</text>
+              <text class="pw-tx">{{word.text}}</text>
+            </view>
+          </view>
+          <view class="chip-actions">
+            <view class="chip-action" data-id="{{word.id}}" bindtap="previewWord">{{previewingId === word.id ? "…" : "🔊 试听"}}</view>
+            <view class="chip-action chip-action-muted" data-word="{{word.text}}" data-id="{{word.id}}" bindtap="correctWord">✏️ 改读音</view>
+          </view>
+          <text wx:if="{{word.duplicateOfRequired}}" class="chip-note">已在必听词里</text>
+          <text wx:if="{{word.pinyinUncertain}}" class="chip-note chip-note-warn">这个词的读音需要你确认</text>
+          <text wx:if="{{degradedId === word.id}}" class="chip-note">读音可能不准</text>
+        </view>
+      </view>
+      <text wx:if="{{!row.hasEligible}}" class="row-note">这一行的组词都已经在必听词里了，不用另外选。</text>
+    </view>
+  </view>
+
+  <view class="bottom-bar">
+    <button class="btn-primary" bindtap="startDictation" disabled="{{creating}}">{{creating ? "正在准备…" : "开始听写"}}</button>
+  </view>
+  </block>
+
+  <!-- 读音修正（§5.3 第 3 层兜底）：确认同音替换文本后写入 word.tts_text -->
+  <view wx:if="{{correction}}" class="modal-mask" catchtap="cancelCorrection">
+    <view class="modal-panel" catchtap="noop">
+      <text class="modal-title">「{{correction.word}}」读音不对？</text>
+      <text class="modal-sub">换一个读音相同或相近的词，以后就用这个词来发音。</text>
+      <input class="modal-input" value="{{correction.value}}" bindinput="onCorrectionInput" />
+      <view class="modal-row">
+        <button class="btn-secondary modal-cancel" bindtap="cancelCorrection">取消</button>
+        <button class="btn-primary modal-ok" bindtap="submitCorrection" disabled="{{correctionSubmitting || !correction.canSubmit}}">{{correctionSubmitting ? "保存中…" : "确认修正"}}</button>
+      </view>
+    </view>
+  </view>
+</view>

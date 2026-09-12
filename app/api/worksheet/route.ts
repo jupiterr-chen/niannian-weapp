@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { paths } from "../../../lib/env";
 import { ApiError, handler, ok } from "../../../lib/api/errors";
+import { parseDataUrlImages } from "../../../lib/api/dataurl";
 import { crossCheckPinyin, getVlmProvider, type RecognizeResult } from "../../../lib/vlm";
 import { normalize } from "../../../lib/core/normalize";
 import {
@@ -28,11 +29,40 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/heif": ".heif",
 };
 
-function extFor(file: File): string {
-  const byMime = EXT_BY_MIME[file.type];
+// 两条上传通道归一后的形状：multipart 的 File 与 JSON data URL 都转成它，
+// 校验、落盘、识别的后续流程只有一份。
+interface RawImage {
+  bytes: Buffer;
+  mime: string;
+  name: string;
+}
+
+function extFor(image: RawImage): string {
+  const byMime = EXT_BY_MIME[image.mime];
   if (byMime) return byMime;
-  const byName = path.extname(file.name);
+  const byName = path.extname(image.name);
   return byName || ".bin";
+}
+
+// wx.request 发不了 multipart，小程序端把压缩后的图片读成 base64 data URL
+// 走 application/json；Content-Type 决定解析方式，行为对两种客户端完全一致。
+async function readRawImages(request: Request): Promise<RawImage[]> {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return parseDataUrlImages(await request.json());
+  }
+
+  const formData = await request.formData();
+  const files = formData.getAll("images").filter((v): v is File => v instanceof File);
+  const rawImages: RawImage[] = [];
+  for (const file of files) {
+    rawImages.push({
+      bytes: Buffer.from(await file.arrayBuffer()),
+      mime: file.type,
+      name: file.name,
+    });
+  }
+  return rawImages;
 }
 
 interface RequiredWordOut {
@@ -56,22 +86,21 @@ interface RecognizedRowOut {
 }
 
 export const POST = handler(async (request: Request) => {
-  const formData = await request.formData();
-  const files = formData.getAll("images").filter((v): v is File => v instanceof File);
+  const images = await readRawImages(request);
 
-  if (files.length === 0) {
+  if (images.length === 0) {
     throw new ApiError("no_images", 400, "请至少上传一张图片");
   }
-  for (const file of files) {
-    if (file.size > MAX_IMAGE_BYTES) {
+  for (const image of images) {
+    if (image.bytes.length > MAX_IMAGE_BYTES) {
       throw new ApiError(
         "image_too_large",
         400,
-        `图片「${file.name}」超过 10MB，请压缩后重新上传`
+        `图片「${image.name}」超过 10MB，请压缩后重新上传`
       );
     }
-    if (!file.type.startsWith("image/")) {
-      throw new ApiError("invalid_image_type", 400, `文件「${file.name}」不是图片格式`);
+    if (!image.mime.startsWith("image/")) {
+      throw new ApiError("invalid_image_type", 400, `文件「${image.name}」不是图片格式`);
     }
   }
 
@@ -79,11 +108,10 @@ export const POST = handler(async (request: Request) => {
   // （PROJECT.md 任务书要求 4：VLM 失败不能丢数据）。
   fs.mkdirSync(paths.images, { recursive: true });
   const saved: { relPath: string; buffer: Buffer }[] = [];
-  for (const file of files) {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const relPath = `${randomUUID()}${extFor(file)}`;
-    fs.writeFileSync(path.join(paths.images, relPath), buffer);
-    saved.push({ relPath, buffer });
+  for (const image of images) {
+    const relPath = `${randomUUID()}${extFor(image)}`;
+    fs.writeFileSync(path.join(paths.images, relPath), image.bytes);
+    saved.push({ relPath, buffer: image.bytes });
   }
   const imagePaths = saved.map((s) => s.relPath);
 

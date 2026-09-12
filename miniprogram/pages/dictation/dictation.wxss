@@ -1,0 +1,205 @@
+/* 听写页（D-25/D-26）：固定一屏、禁止滚动；竖屏纵向三段式。
+   弹性分配：状态区（孩子要看的）> 按钮区 > 序号 > 结束入口。 */
+.dictation {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  gap: 24rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.state-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32rpx;
+  text-align: center;
+  font-size: 22px;
+}
+.state-btn {
+  width: 80%;
+}
+
+/* 解锁遮罩（铁律 4） */
+.unlock {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 48rpx;
+  padding: 48rpx;
+}
+.unlock-text {
+  font-size: 26px;
+  text-align: center;
+}
+.unlock-btn {
+  width: 80%;
+}
+
+.pane {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.pane-info {
+  flex-grow: 1.3;
+}
+
+/* 头部：序号 ≥72px（家长核对用，视觉层级排「中」）+ 进度条 */
+.head {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+.seq-line {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  white-space: nowrap;
+}
+.seq-label {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.seq-number {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+}
+.bar {
+  width: 100%;
+  height: 12rpx;
+  border-radius: 9999px;
+  background: var(--chip-bg);
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--primary);
+  transition: width 0.2s ease;
+}
+
+/* 状态区：整屏视觉主角 */
+.status {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24rpx;
+  text-align: center;
+}
+.status-icon {
+  font-size: 96px;
+  line-height: 1;
+}
+.status-text {
+  font-size: 34px;
+  font-weight: 700;
+}
+.status-sub {
+  font-size: 22px;
+  color: var(--fg-muted);
+}
+.status-pinyin {
+  font-size: 26px;
+  color: var(--warning);
+}
+
+/* 按钮区 */
+.pane-actions {
+  flex-grow: 1;
+}
+.buttons {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24rpx;
+}
+.btn-row {
+  display: flex;
+  width: 100%;
+  gap: 24rpx;
+}
+.btn-row .btn-secondary {
+  flex: 1;
+}
+.end-zone {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  padding-top: 8rpx;
+}
+.end-trigger {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 24rpx;
+  font-size: 15px;
+  color: var(--fg-muted);
+  text-decoration: underline;
+}
+
+/* 结束确认面板（D-23） */
+.end-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 24rpx;
+}
+.end-panel {
+  width: 100%;
+  max-width: 960rpx;
+  background: var(--bg-elevated);
+  border-radius: 24px;
+  padding: 48rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.end-title {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+}
+.end-sub {
+  font-size: 22px;
+  color: var(--fg-muted);
+  text-align: center;
+}
+.end-stop {
+  min-height: 52px;
+  font-size: 16px;
+  color: var(--danger);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

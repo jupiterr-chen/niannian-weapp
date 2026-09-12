@@ -49,3 +49,7 @@ data/
 
 # 本地部署信息（真实内网地址），不进公开仓库
 DEPLOY.local.md
+
+# 小程序本地配置（真实服务器地址）与开发者工具私有配置
+miniprogram/config.local.js
+miniprogram/project.private.config.json

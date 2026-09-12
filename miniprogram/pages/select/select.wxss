@@ -1,0 +1,221 @@
+.select-page {
+  padding-bottom: 200rpx; /* 给固定底栏留空间 */
+}
+.state-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32rpx;
+  text-align: center;
+  font-size: 22px;
+}
+.state-btn {
+  width: 80%;
+}
+.summary-bar {
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  padding: 24rpx;
+  text-align: center;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.rows-head {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.pick-btn {
+  align-self: flex-start;
+  min-height: 88px;
+  padding: 0 48rpx;
+  border-radius: 16px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+.pick-btn[disabled] {
+  opacity: 0.5;
+}
+
+/* 生字行卡片 */
+.row-card {
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 24rpx;
+}
+.row-pinyin {
+  font-size: 15px;
+  color: var(--fg-muted);
+}
+.row-char {
+  font-size: 28px;
+  font-weight: 700;
+}
+.row-index {
+  font-size: 15px;
+  color: var(--fg-muted);
+}
+.row-note {
+  font-size: 22px;
+  color: var(--fg-muted);
+}
+
+/* 词语卡片（必听/候选共用） */
+.chip-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  border-radius: 16px;
+}
+.chip-uncertain {
+  box-shadow: 0 0 0 4px var(--warning-border);
+}
+.chip-hanzi {
+  min-height: 120px;
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 16rpx 12rpx;
+  box-sizing: border-box;
+}
+.chip-lock {
+  font-size: 15px;
+}
+.chip-locked {
+  background: var(--locked-bg);
+  border-color: var(--locked-border);
+  color: var(--locked-fg);
+}
+.chip-selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-fg);
+}
+.chip-selected .pw-py {
+  color: var(--primary-fg);
+}
+.chip-normal {
+  background: var(--chip-bg);
+  border-color: var(--border);
+  color: var(--chip-fg);
+}
+.chip-dup {
+  background: var(--chip-bg);
+  border-color: var(--border);
+  color: var(--fg-muted);
+  opacity: 0.6;
+}
+
+/* 家长低频操作（D-29）：48px 下限即可 */
+.chip-actions {
+  display: flex;
+  gap: 16rpx;
+}
+.chip-action {
+  flex: 1;
+  min-height: 48px;
+  border: 2px solid var(--border);
+  border-radius: 9999px;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background: var(--bg);
+  color: var(--fg);
+}
+.chip-action-muted {
+  color: var(--fg-muted);
+}
+.chip-note {
+  text-align: center;
+  font-size: 15px;
+  color: var(--fg-muted);
+}
+.chip-note-warn {
+  color: var(--warning);
+}
+
+/* 固定底栏 */
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 2px solid var(--border);
+}
+
+/* 读音修正弹窗 */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+.modal-panel {
+  width: 100%;
+  max-width: 640rpx;
+  background: var(--bg-elevated);
+  border-radius: 16px;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+.modal-sub {
+  font-size: 16px;
+  color: var(--fg-muted);
+}
+.modal-input {
+  min-height: 60px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 0 24rpx;
+  font-size: 20px;
+  margin-top: 16rpx;
+}
+.modal-row {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 24rpx;
+}
+.modal-cancel {
+  flex: 1;
+}
+.modal-ok {
+  flex: 2;
+}

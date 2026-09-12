@@ -1,0 +1,32 @@
+<view class="page">
+  <text class="page-title">上传今天的作业</text>
+
+  <view wx:if="{{error}}" class="notice-danger">
+    <text>{{error}}</text>
+    <button class="btn-secondary reset-btn" bindtap="resetAll">重新选图</button>
+  </view>
+
+  <view class="upload-block">
+    <block wx:if="{{!submitting}}">
+      <button class="pick-btn" bindtap="chooseImages">
+        {{images.length === 0 ? "点这里拍照或选照片（可多选）" : "继续添加照片"}}
+      </button>
+
+      <view wx:if="{{images.length > 0}}" class="thumbs">
+        <view wx:for="{{images}}" wx:key="id" class="thumb">
+          <image class="thumb-img" src="{{item.path}}" mode="aspectFill" />
+          <view class="thumb-del" data-id="{{item.id}}" catchtap="removeImage">×</view>
+        </view>
+      </view>
+    </block>
+
+    <view wx:if="{{submitting}}" class="loading">
+      <view class="spinner" />
+      <text class="loading-text">正在认字，大约 10 秒…</text>
+    </view>
+  </view>
+
+  <button class="btn-primary" bindtap="submit" disabled="{{images.length === 0 || submitting}}">
+    {{submitting ? "正在识别…" : "开始识别"}}
+  </button>
+</view>

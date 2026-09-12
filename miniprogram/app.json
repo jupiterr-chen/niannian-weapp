@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/upload/upload",
+    "pages/select/select",
+    "pages/dictation/dictation",
+    "pages/done/done",
+    "pages/history/history",
+    "pages/privacy/privacy"
+  ],
+  "window": {
+    "navigationBarTitleText": "听写助手",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#ffffff",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

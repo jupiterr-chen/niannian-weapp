@@ -1,0 +1,9 @@
+<view class="page">
+  <text class="page-title">隐私政策</text>
+  <view class="privacy-body">
+    <text class="privacy-p">本工具面向家庭内部使用，不对外提供公众服务。</text>
+    <text class="privacy-p">你上传的作业照片仅用于识别词语和拼音，由家庭自建服务器处理，不提供给任何第三方。识别完成后照片保留在服务器上，可随时要求删除。</text>
+    <text class="privacy-p">听写记录（哪次听了哪些词、跳过了哪些词）仅存储在家庭自建服务器上，用于生成历史记录和「重点看」统计。</text>
+    <text class="privacy-p">本工具不收集姓名、手机号等个人身份信息，不接入任何广告或统计 SDK。</text>
+  </view>
+</view>

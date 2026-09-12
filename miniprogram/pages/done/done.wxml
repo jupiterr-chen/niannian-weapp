@@ -1,0 +1,28 @@
+<view class="page done">
+  <view class="done-block">
+    <text class="done-title">全部写完 🎉</text>
+    <text wx:if="{{result === null && !error}}" class="muted">正在统计…</text>
+    <text wx:if="{{error}}" class="muted">{{error}}</text>
+  </view>
+
+  <view wx:if="{{result}}" class="done-block">
+    <text class="muted">共 {{result.total}} 个 · 跳过 {{result.skipped}} 个</text>
+    <text class="muted">有 {{result.hintCount}} 个词用过提示</text>
+  </view>
+
+  <view wx:if="{{result && result.skippedWords.length > 0}}" class="done-block">
+    <view class="focus-card">
+      <text class="heading focus-title">重点看</text>
+      <view class="chip-grid focus-grid">
+        <view wx:for="{{result.skippedWords}}" wx:key="id" class="pw pw-sm">
+          <text class="pinyin pw-py">{{item.pinyin}}</text>
+          <text class="pw-tx">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="done-cta">
+    <button class="btn-primary" bindtap="goHome">回到首页</button>
+  </view>
+</view>

@@ -1,0 +1,33 @@
+<view class="page">
+  <text class="page-title">历史记录</text>
+
+  <view wx:if="{{state === 'loading'}}" class="muted"><text>正在加载…</text></view>
+  <view wx:elif="{{state === 'error'}}" class="muted"><text>加载失败了，请稍后再试。</text></view>
+  <view wx:elif="{{history.length === 0}}" class="muted"><text>还没有听写记录。</text></view>
+
+  <view wx:else class="list">
+    <view wx:for="{{history}}" wx:key="sessionId" class="item">
+      <view class="item-head" data-session-id="{{item.sessionId}}" bindtap="toggleOpen">
+        <text class="item-title">{{item.dateText}}{{item.worksheetTitle ? " · " + item.worksheetTitle : ""}}</text>
+        <text class="item-sub">共 {{item.total}} 个 · 跳过 {{item.skipped}} 个{{item.finishedAt ? "" : " · 未做完"}}</text>
+      </view>
+
+      <view wx:if="{{openSessionId === item.sessionId}}" class="item-detail">
+        <view wx:if="{{!details[item.sessionId]}}" class="muted"><text>加载词表中…</text></view>
+        <view wx:else class="chip-grid detail-grid">
+          <view wx:for="{{details[item.sessionId]}}" wx:for-item="a" wx:key="id" class="detail-word">
+            <view class="pw pw-sm">
+              <text class="pinyin pw-py">{{a.word.pinyin}}</text>
+              <text class="pw-tx">{{a.word.text}}</text>
+            </view>
+            <text class="detail-status {{a.status === 'skipped' ? 'detail-skipped' : ''}}">{{a.status === "written" ? "写好了" : a.status === "skipped" ? "跳过了" : "未做"}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="history-cta">
+    <button class="btn-secondary" bindtap="goHome">回到首页</button>
+  </view>
+</view>
