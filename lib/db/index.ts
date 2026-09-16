@@ -35,6 +35,16 @@ function needsRebuild(driver: DbDriver): boolean {
   return missingRowPinyin || stalePrimaryKey;
 }
 
+// session.duration_ms 是后加的列：老库（含 NAS 上已运行的家庭数据）用
+// ALTER TABLE 增量补列，不触发整库重建。
+function ensureSessionColumns(driver: DbDriver): void {
+  const columns = driver.prepare<ColumnInfo>(`PRAGMA table_info(session)`).all();
+  if (columns.length > 0 && !columns.some((c) => c.name === "duration_ms")) {
+    driver.exec(`ALTER TABLE session ADD COLUMN duration_ms INTEGER`);
+    console.warn("[db] session 表已增量补列 duration_ms");
+  }
+}
+
 function init(): DbDriver {
   ensureDataDirs();
   let driver = openDriver(paths.db);
@@ -52,6 +62,7 @@ function init(): DbDriver {
   }
 
   driver.exec(SCHEMA_SQL);
+  ensureSessionColumns(driver);
   return driver;
 }
 

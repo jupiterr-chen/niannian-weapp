@@ -29,4 +29,49 @@ function clearLastSession() {
   }
 }
 
-module.exports = { saveLastSession, readLastSession, clearLastSession };
+// 听写计时：断点续做/中途退出后，已进行的秒数 keyed by sessionId 持久化。
+function elapsedKey(sessionId) {
+  return `niannian:elapsed:${sessionId}`;
+}
+
+function getElapsed(sessionId) {
+  try {
+    return Number(wx.getStorageSync(elapsedKey(sessionId))) || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function setElapsed(sessionId, seconds) {
+  try {
+    wx.setStorageSync(elapsedKey(sessionId), seconds);
+  } catch (e) {
+    // 忽略：计时只是统计，丢一次无妨。
+  }
+}
+
+function clearElapsed(sessionId) {
+  try {
+    wx.removeStorageSync(elapsedKey(sessionId));
+  } catch (e) {
+    // 忽略。
+  }
+}
+
+function formatElapsed(totalSeconds) {
+  const sec = Math.max(0, Math.floor(totalSeconds));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(m)}:${pad(s)}`;
+}
+
+module.exports = {
+  saveLastSession,
+  readLastSession,
+  clearLastSession,
+  getElapsed,
+  setElapsed,
+  clearElapsed,
+  formatElapsed,
+};

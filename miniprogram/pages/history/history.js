@@ -1,6 +1,7 @@
 // 历史记录页（对应 Web 版 app/history/page.tsx）。
 // 点开记录只读 GET /api/session/:id，绝不触发 finish（那是幂等的，但没必要调）。
 const { request } = require("../../utils/request");
+const storage = require("../../utils/storage");
 
 function formatDate(iso) {
   const d = new Date(iso);
@@ -26,7 +27,12 @@ Page({
       const body = await request("/api/history");
       this.setData({
         state: "ready",
-        history: body.history.map((row) => ({ ...row, dateText: formatDate(row.createdAt) })),
+        history: body.history.map((row) => ({
+          ...row,
+          dateText: formatDate(row.createdAt),
+          durationText:
+            row.finishedAt && row.durationMs ? storage.formatElapsed(row.durationMs / 1000) : "",
+        })),
       });
     } catch (err) {
       this.setData({ state: "error" });

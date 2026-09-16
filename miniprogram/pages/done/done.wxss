@@ -20,6 +20,82 @@
   font-weight: 800;
 }
 
+/* ---- 庆祝卡片：弹跳入场（过冲回弹），彩带 emoji 从卡片顶部落下 ---- */
+.celebrate {
+  position: relative;
+  width: 100%;
+  padding: 56rpx 40rpx 44rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  animation: pop-in 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes pop-in {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.cele-badge {
+  font-size: 88px;
+  line-height: 1.1;
+}
+.cele-title {
+  font-size: 38px;
+  font-weight: 800;
+}
+.cele-sub {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 9999px;
+  padding: 6rpx 28rpx;
+  margin-top: 8rpx;
+}
+
+.confetti-box {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 24px;
+}
+.confetti {
+  position: absolute;
+  top: -48rpx;
+  font-size: 26px;
+  animation: confetti-fall 2.6s ease-in forwards;
+  opacity: 0;
+}
+.cf1 { left: 10%; animation-delay: 0.15s; }
+.cf2 { left: 26%; animation-delay: 0.45s; font-size: 20px; }
+.cf3 { left: 44%; animation-delay: 0.05s; font-size: 22px; }
+.cf4 { left: 60%; animation-delay: 0.55s; }
+.cf5 { left: 76%; animation-delay: 0.3s; font-size: 20px; }
+.cf6 { left: 90%; animation-delay: 0.7s; font-size: 22px; }
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(560rpx) rotate(260deg);
+    opacity: 0;
+  }
+}
+
 /* 三个统计胶囊 */
 .done-stats {
   display: flex;

@@ -80,6 +80,7 @@ export interface HistoryRow {
   worksheetTitle: string | null;
   createdAt: string;
   finishedAt: string | null;
+  durationMs: number | null;
   total: number;
   skipped: number;
 }
@@ -405,7 +406,10 @@ export function updateSessionCursor(sessionId: number, cursor: number): void {
 }
 
 export const finishSession = db.transaction(
-  (sessionId: number): { total: number; skipped: number; hintCount: number; skippedWords: WordRow[] } => {
+  (
+    sessionId: number,
+    durationMs?: number
+  ): { total: number; skipped: number; hintCount: number; skippedWords: WordRow[] } => {
     // Idempotent (PROJECT.md §11 D-18): a second call (double-submit, page
     // refresh on /done, StrictMode double-invoke) must not re-run
     // applyAttemptToMistakes — that would double-count skip_count/hint_sum
@@ -418,6 +422,13 @@ export const finishSession = db.transaction(
     if (!alreadyFinished) {
       db.prepare(`UPDATE session SET finished_at = ? WHERE id = ?`).run(nowIso(), sessionId);
       applyAttemptToMistakes(sessionId);
+    }
+    // 用时由客户端上报；幂等重放时同值再写一次无害（D-18 语义不变）。
+    if (durationMs !== undefined && Number.isFinite(durationMs)) {
+      db.prepare(`UPDATE session SET duration_ms = ? WHERE id = ?`).run(
+        Math.max(0, Math.round(durationMs)),
+        sessionId
+      );
     }
 
     const attemptDbRows = db
@@ -542,6 +553,7 @@ interface HistoryDbRow {
   worksheet_title: string | null;
   created_at: string;
   finished_at: string | null;
+  duration_ms: number | null;
   total: number;
   skipped: number;
 }
@@ -555,6 +567,7 @@ export function listHistory(limit = 50): HistoryRow[] {
          w.title AS worksheet_title,
          s.created_at AS created_at,
          s.finished_at AS finished_at,
+         s.duration_ms AS duration_ms,
          (SELECT COUNT(*) FROM attempt WHERE attempt.session_id = s.id) AS total,
          (SELECT COUNT(*) FROM attempt WHERE attempt.session_id = s.id AND attempt.status = 'skipped') AS skipped
        FROM session s
@@ -570,6 +583,7 @@ export function listHistory(limit = 50): HistoryRow[] {
     worksheetTitle: r.worksheet_title,
     createdAt: r.created_at,
     finishedAt: r.finished_at,
+    durationMs: r.duration_ms,
     total: r.total,
     skipped: r.skipped,
   }));

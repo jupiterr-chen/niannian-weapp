@@ -11,7 +11,7 @@
         <view class="item-dot {{item.finishedAt ? 'dot-ok' : 'dot-open'}}"></view>
         <view class="item-texts">
           <text class="item-title">{{item.dateText}}{{item.worksheetTitle ? " · " + item.worksheetTitle : ""}}</text>
-          <text class="item-sub">共 {{item.total}} 个 · 跳过 {{item.skipped}} 个{{item.finishedAt ? "" : " · 未做完"}}</text>
+          <text class="item-sub">共 {{item.total}} 个 · 跳过 {{item.skipped}} 个{{item.durationText ? " · 用时 " + item.durationText : ""}}{{item.finishedAt ? "" : " · 未做完"}}</text>
         </view>
         <text class="item-chev">{{openSessionId === item.sessionId ? "▾" : "▸"}}</text>
       </view>

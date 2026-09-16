@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS session (
   created_at   TEXT NOT NULL,
   settings     TEXT NOT NULL,         -- JSON: {repeat,gapMs,speed,voice}
   cursor       INTEGER NOT NULL DEFAULT 0,
-  finished_at  TEXT
+  finished_at  TEXT,
+  duration_ms  INTEGER                -- 客户端上报的本次听写用时（断点续做会累计）
 );
 
 CREATE TABLE IF NOT EXISTS attempt (

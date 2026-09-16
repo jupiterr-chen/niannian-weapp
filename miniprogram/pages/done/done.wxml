@@ -1,7 +1,20 @@
 <view class="page done">
   <view class="done-block">
-    <text class="done-emoji">🎉</text>
-    <text class="done-title">全部写完！</text>
+    <!-- 庆祝卡片：弹跳入场 + 彩带落下，按表现授予称号 -->
+    <view wx:if="{{result}}" class="celebrate card">
+      <view class="confetti-box">
+        <text class="confetti cf1">🎉</text>
+        <text class="confetti cf2">⭐</text>
+        <text class="confetti cf3">✨</text>
+        <text class="confetti cf4">🎊</text>
+        <text class="confetti cf5">💛</text>
+        <text class="confetti cf6">⭐</text>
+      </view>
+      <text class="cele-badge">{{badge}}</text>
+      <text class="cele-title">{{title}}</text>
+      <text wx:if="{{durationText}}" class="cele-sub">⏱ 本次用时 {{durationText}}</text>
+    </view>
+
     <text wx:if="{{result === null && !error}}" class="muted">正在统计…</text>
     <text wx:if="{{error}}" class="muted">{{error}}</text>
   </view>

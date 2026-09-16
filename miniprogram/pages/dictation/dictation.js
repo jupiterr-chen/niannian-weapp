@@ -16,8 +16,12 @@ const config = require("../../config");
 
 const REPLAY_DEBOUNCE_MS = 800;
 
-function audioPath(wordId, speed, repeat, seq) {
-  return `/api/audio?wordId=${wordId}&speed=${speed}&repeat=${repeat}&seq=${seq}`;
+// 2026-09-12 反馈调整：不再报「第 N 个」直接读词；三遍重复的间隔由 1.5s
+// 拉长到 2.5s（服务端按 gapMs 重新拼装，词级音频缓存不受影响）。
+const DICTATION_GAP_MS = 2500;
+
+function audioPath(wordId, speed, repeat) {
+  return `/api/audio?wordId=${wordId}&speed=${speed}&repeat=${repeat}&gapMs=${DICTATION_GAP_MS}`;
 }
 
 Page({
@@ -39,9 +43,12 @@ Page({
     degraded: false,
     ttsError: false,
     endOpen: false,
+    elapsedText: "00:00",
   },
 
   onLoad(options) {
+    this.elapsedSec = null;
+    this.timerId = null;
     // 当前词绝不上屏——导航栏标题固定，不随词变化。
     wx.setNavigationBarTitle({ title: "听写中 · 听写助手" });
     wx.setKeepScreenOn({ keepScreenOn: true });
@@ -58,7 +65,32 @@ Page({
   onUnload() {
     if (this.interruptionHandler) wx.offAudioInterruptionBegin(this.interruptionHandler);
     audio.main.stop();
+    this.stopTimer();
     wx.setKeepScreenOn({ keepScreenOn: false });
+  },
+
+  // --- 计时：从首次解锁起算，断点续做从本地累计值接着走 ---
+  startTimer() {
+    if (this.timerId) return;
+    if (this.elapsedSec == null) this.elapsedSec = storage.getElapsed(this.data.sessionId);
+    this.setData({ elapsedText: storage.formatElapsed(this.elapsedSec) });
+    this.timerId = setInterval(() => {
+      this.elapsedSec += 1;
+      if (this.elapsedSec % 5 === 0) storage.setElapsed(this.data.sessionId, this.elapsedSec);
+      this.setData({ elapsedText: storage.formatElapsed(this.elapsedSec) });
+    }, 1000);
+  },
+
+  stopTimer() {
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
+    }
+    if (this.elapsedSec != null) {
+      storage.setElapsed(this.data.sessionId, this.elapsedSec);
+      return this.elapsedSec * 1000;
+    }
+    return 0;
   },
 
   // 铁律 5：切后台只停不续。
@@ -117,7 +149,7 @@ Page({
   refreshStatus() {
     const { playState, replaying } = this.data;
     const text =
-      playState === "playing" ? (replaying ? "正在慢速再读一遍" : "正在朗读") : "轮到你写啦";
+      playState === "playing" ? (replaying ? "慢慢听" : "认真听") : "轮到你写啦";
     this.setData({ statusText: text, statusLong: text.length > 6 });
   },
 
@@ -126,7 +158,7 @@ Page({
     this.setData({ playState: "playing", degraded: false, ttsError: false });
     this.refreshStatus();
     audio.main
-      .play(audioPath(attempt.wordId, opts.speed, opts.repeat, attempt.seq), {
+      .play(audioPath(attempt.wordId, opts.speed, opts.repeat), {
         onEnded: () => this.setData({ playState: "waiting", replaying: false }),
         onError: () => this.setData({ playState: "waiting", replaying: false }),
       })
@@ -146,11 +178,12 @@ Page({
     const next = this.data.attempts[this.data.cursorIndex + 1];
     if (!next) return;
     const { speed, repeat } = this.data.settings;
-    audio.prefetch(audioPath(next.wordId, speed, repeat, next.seq));
+    audio.prefetch(audioPath(next.wordId, speed, repeat));
   },
 
   handleUnlock() {
     this.setData({ unlocked: true });
+    this.startTimer();
     const { speed, repeat } = this.data.settings;
     this.playForAttempt(this.data.attempts[this.data.cursorIndex], { speed, repeat });
     this.prefetchNext();
@@ -173,8 +206,9 @@ Page({
     const nextIndex = index + 1;
     if (nextIndex >= this.data.total) {
       audio.main.stop();
+      const ms = this.stopTimer();
       storage.clearLastSession();
-      wx.redirectTo({ url: `/pages/done/done?id=${this.data.sessionId}` });
+      wx.redirectTo({ url: `/pages/done/done?id=${this.data.sessionId}&ms=${ms}` });
       return;
     }
     const { speed, repeat } = this.data.settings;
@@ -227,8 +261,9 @@ Page({
   confirmEnd() {
     this.setData({ endOpen: false });
     audio.main.stop();
+    const ms = this.stopTimer();
     storage.clearLastSession();
-    wx.redirectTo({ url: `/pages/done/done?id=${this.data.sessionId}` });
+    wx.redirectTo({ url: `/pages/done/done?id=${this.data.sessionId}&ms=${ms}` });
   },
 
   goHome() {
