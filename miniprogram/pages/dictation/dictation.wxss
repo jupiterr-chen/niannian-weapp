@@ -196,7 +196,7 @@
   flex: 0 0 auto;
   display: flex;
   justify-content: center;
-  padding-top: 8rpx;
+  padding-top: 28rpx;
 }
 .end-trigger {
   min-height: 44px;
