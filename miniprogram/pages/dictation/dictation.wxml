@@ -17,21 +17,23 @@
 
     <view class="pane pane-info">
       <view class="head">
-        <view class="timer">⏱ {{elapsedText}}</view>
         <view class="seq-line">
           <text class="seq-label">第</text>
           <text class="seq-number">{{current.seq}} / {{total}}</text>
           <text class="seq-label">个</text>
         </view>
-        <view class="bar">
-          <view class="bar-fill" style="width: {{progressPct}}%" />
+        <view class="bar-row">
+          <view class="bar">
+            <view class="bar-fill" style="width: {{progressPct}}%" />
+          </view>
+          <view class="timer">⏱ {{elapsedText}}</view>
         </view>
       </view>
 
       <!-- 状态区是这一屏的视觉主角——孩子只关心「现在该听还是该写」。 -->
       <view class="status">
         <text class="status-icon">{{playState === "playing" ? "🔊" : "✍️"}}</text>
-        <text class="status-text {{statusLong ? 'status-text-long' : ''}}">{{statusText}}</text>
+        <text class="status-text">{{statusText}}</text>
         <text wx:if="{{degraded}}" class="status-sub">读音可能不准</text>
         <text wx:if="{{ttsError}}" class="status-sub l">语音暂时不可用，</text>
         <text wx:if="{{ttsError}}" class="status-sub l">点「再读一遍」重试</text>
@@ -41,11 +43,11 @@
 
     <view class="pane pane-actions">
       <view class="buttons">
-        <button class="btn-pop btn-main-success" hover-class="btn-pop-press" bindtap="advanceWritten" disabled="{{!unlocked}}"><text class="btn-label">✅ 写好了</text></button>
         <view class="btn-row">
           <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="onReplay" disabled="{{!unlocked}}"><text class="btn-label">🔊 再读一遍</text></button>
           <button class="btn-secondary" hover-class="btn-secondary-press" bindtap="advanceSkip" disabled="{{!unlocked}}"><text class="btn-label">🤔 不会，跳过</text></button>
         </view>
+        <button class="btn-pop btn-main-success" hover-class="btn-pop-press" bindtap="advanceWritten" disabled="{{!unlocked}}"><text class="btn-label">✅ 写好了</text></button>
       </view>
 
       <view class="end-zone">

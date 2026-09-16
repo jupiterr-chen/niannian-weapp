@@ -148,9 +148,9 @@ Page({
 
   refreshStatus() {
     const { playState, replaying } = this.data;
-    const text =
-      playState === "playing" ? (replaying ? "慢慢听" : "认真听") : "轮到你写啦";
-    this.setData({ statusText: text, statusLong: text.length > 6 });
+    // 播报中 →「正在朗读」，三遍读完等待作答 →「正在听写」
+    const text = playState === "playing" ? "正在朗读" : "正在听写";
+    this.setData({ statusText: text });
   },
 
   // 播放当前词。playState 由引擎回调驱动；任何新的播放/停止都会作废旧回调。
