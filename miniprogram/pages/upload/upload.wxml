@@ -1,5 +1,8 @@
 <view class="page">
-  <text class="page-title">上传今天的作业</text>
+  <view class="title-row">
+    <text class="page-title">上传今天的作业</text>
+    <text wx:if="{{testMode}}" class="test-badge">🧪 测试模式</text>
+  </view>
 
   <view wx:if="{{error}}" class="notice-danger">
     <text class="l">{{error}}</text>
@@ -30,7 +33,7 @@
     </view>
   </view>
 
-  <button class="btn-pop btn-primary" hover-class="btn-pop-press" bindtap="submit" disabled="{{images.length === 0 || submitting}}">
-    <text class="btn-label">{{submitting ? "正在识别…" : "🔍 开始识别"}}</text>
+  <button class="btn-pop btn-primary" hover-class="btn-pop-press" bindtap="submit" disabled="{{(!testMode && images.length === 0) || submitting}}">
+    <text class="btn-label">{{testMode ? "🧪 用上次词表测试" : (submitting ? "正在识别…" : "🔍 开始识别")}}</text>
   </button>
 </view>

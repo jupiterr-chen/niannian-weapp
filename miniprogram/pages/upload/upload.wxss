@@ -94,3 +94,19 @@
   font-size: 22px;
   font-weight: 600;
 }
+
+/* 测试模式角标：醒目提醒当前不会真实识别 */
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.test-badge {
+  font-size: 15px;
+  font-weight: 700;
+  color: #8A6A10;
+  background: var(--yellow-soft);
+  border: 2px solid var(--yellow);
+  border-radius: 9999px;
+  padding: 4rpx 20rpx;
+}

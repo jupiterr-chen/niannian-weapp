@@ -15,4 +15,7 @@ module.exports = {
   // devAutoUnlock: 听写页加载后自动点开始（跳过解锁遮罩），用于截主界面
   devStartPage: local.devStartPage || null,
   devAutoUnlock: !!local.devAutoUnlock,
+  // 测试模式：上传页跳过真实上传与 VLM 识别，直接复用最近一次作业的词表
+  // （省 token）。只应出现在 config.local.js，线上不会配置。
+  devFakeUpload: !!local.devFakeUpload,
 };

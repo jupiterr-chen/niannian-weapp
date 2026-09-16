@@ -3,6 +3,7 @@
 // data URL，走 POST /api/worksheet 的 application/json 入参（后端已支持，
 // 与 Web 版 multipart 行为完全一致）。
 const { request } = require("../../utils/request");
+const config = require("../../config");
 
 const MIME_BY_EXT = {
   jpg: "image/jpeg",
@@ -51,6 +52,7 @@ Page({
     images: [],
     submitting: false,
     error: null,
+    testMode: config.devFakeUpload,
   },
 
   chooseImages() {
@@ -87,8 +89,26 @@ Page({
   },
 
   async submit() {
-    if (this.data.images.length === 0 || this.data.submitting) return;
+    if (this.data.submitting) return;
+    if (!this.data.testMode && this.data.images.length === 0) return;
     this.setData({ submitting: true, error: null });
+
+    // 测试模式：不传照片、不调 VLM，直接复用最近一次作业的词表，
+    // 后续选词/听写/完成全流程照常可测。
+    if (this.data.testMode) {
+      try {
+        const hist = await request("/api/history");
+        const latest = hist.history.find((r) => r.worksheetId);
+        if (latest) {
+          wx.redirectTo({ url: `/pages/select/select?id=${latest.worksheetId}` });
+          return;
+        }
+        this.setData({ submitting: false, error: "还没有历史作业，先真实上传一次吧" });
+      } catch (err) {
+        this.setData({ submitting: false, error: err.message });
+      }
+      return;
+    }
 
     try {
       const dataUrls = [];
