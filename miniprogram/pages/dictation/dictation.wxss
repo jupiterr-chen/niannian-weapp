@@ -168,19 +168,15 @@
 }
 .buttons {
   flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  box-sizing: border-box;
-  /* 真机教训（2026-09-12）：绿色按钮在多层 flex 列嵌套下，
-     stretch 与 width:100% 都被忽略、按钮收缩成内容宽。改为普通块级流，
-     原生 button 的块级行为天然占满整行——不依赖任何弹性计算。 */
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 24rpx;
 }
 /* 「写好了」是听写中的高频主操作：独占一行、最大最醒目 */
 .btn-main-success {
-  display: block;
   width: 100%;
-  margin: 0;
   min-height: 88px;
   font-size: 26px;
   background: var(--green);
@@ -191,11 +187,10 @@
 .btn-row {
   display: flex;
   width: 100%;
-  margin-bottom: 24rpx;
+  gap: 24rpx;
 }
 .btn-row .btn-secondary {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 1;
 }
 .end-zone {
   flex: 0 0 auto;
