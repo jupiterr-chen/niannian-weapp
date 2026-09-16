@@ -170,18 +170,18 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   gap: 24rpx;
 }
 /* 「写好了」是听写中的高频主操作：独占一行、最大最醒目 */
 .btn-main-success {
   width: 100%;
-  min-height: 104px;
-  font-size: 28px;
+  min-height: 88px;
+  font-size: 26px;
   background: var(--green);
-  box-shadow: 0 7px 0 var(--green-edge);
-  border-radius: 24px;
+  box-shadow: 0 5px 0 var(--green-edge);
+  border-radius: 20px;
 }
 
 .btn-row {
